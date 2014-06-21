@@ -56,6 +56,26 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(foobar)
   }
 
+//  "using bundle" in {
+//    val u = User("bob", 32, 'M')
+//    val data = extractCaseClassFields(u)
+//
+//    println(data)
+//  }
+
+  "case name" in {
+    val data = extractCaseName[User]
+
+    debug(data)
+  }
+
+//  "not case class doesnt compile" in {
+//    extractCaseName[Int]
+////     Error:(73, 20) class Int is not a case class
+////                       extractCaseName[Int]
+////                                 ^
+//  }
+
 //  "case class to map" in {
 //    val user = User("Bob", 32, 'M')
 //    val map = caseToMap(user)

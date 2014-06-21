@@ -10,7 +10,7 @@ case class Event(name: String, createTS: Date, updateTS: Date)
 
 class MacroTests extends FreeSpecLike with Matchers {
 
-  import DebugMacros._
+  import Macros._
 
   "Hello macro prints hello world" in {
     hello()
@@ -39,11 +39,23 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug("The user", User(name, age, sex), "was created at", new Date())
   }
 
+  "sdebug statement prints out expressions" in {
+    val name = "john"
+    val age = 32
+    val sex = 'M'
+
+    val out1 = sdebug("The user", (name, age, sex), "was created at", new Date())
+    debug(out1)
+
+    val out2 = sdebug("The user", User(name, age, sex), "was created at", new Date())
+    debug(out2)
+  }
+
   "extract type" in {
-    debug("Checking users ", extractName[User])
-    debug("checking strings ", extractName[String])
-    debug("checking ints ", extractName[Int])
-    debug("checking list but with type alias", extractName[({ type V = List[Int] })#V])
+    debug("Checking users ", caseFields[User])
+    debug("checking strings ", caseFields[String])
+    debug("checking ints ", caseFields[Int])
+    debug("checking list but with type alias", caseFields[({ type V = List[Int] })#V])
   }
 
   "create object" in {
@@ -56,40 +68,9 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(foobar)
   }
 
-//  "using bundle" in {
-//    val u = User("bob", 32, 'M')
-//    val data = extractCaseClassFields(u)
-//
-//    println(data)
-//  }
-
   "case name" in {
     val data = extractCaseName[User]
 
     debug(data)
   }
-
-//  "not case class doesnt compile" in {
-//    extractCaseName[Int]
-////     Error:(73, 20) class Int is not a case class
-////                       extractCaseName[Int]
-////                                 ^
-//  }
-
-//  "case class to map" in {
-//    val user = User("Bob", 32, 'M')
-//    val map = caseToMap(user)
-//
-//    debug(user, map)
-//  }
-
 }
-
-//object Test extends App {
-//  import DebugMacros._
-//
-//  val user = User("Bob", 32, 'M')
-//  val map = extractValues(user)
-//
-//  debug(user, map)
-//}

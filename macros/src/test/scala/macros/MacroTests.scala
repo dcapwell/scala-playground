@@ -11,8 +11,6 @@ case class Event(name: String, createTS: Date, updateTS: Date)
 class MacroTests extends FreeSpecLike with Matchers {
 
   import Macros._
-  import Debug._
-  import Case._
 
   "Hello macro prints hello world" in {
     hello()

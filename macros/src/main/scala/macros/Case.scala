@@ -8,7 +8,6 @@ trait CaseFunctions {
   def caseFields[A](): String = macro CaseClassMacros.caseFields[A]
 
   def extractCaseName[T]: String = macro CaseClassMacros.name[T]
-
 }
 
 object Case extends CaseFunctions
@@ -16,11 +15,11 @@ object Case extends CaseFunctions
 class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
   import c.universe._
 
-  def name[T: c.WeakTypeTag]: c.Expr[String] = {
-    val t = weakTypeOf[T]
-    assertCaseClass(t)
+  def name[A: c.WeakTypeTag]: c.Expr[String] = {
+    val a = weakTypeOf[A]
+    assertCaseClass(a)
 
-    c.Expr[String](Literal(Constant(t.toString)))
+    c.Expr[String](Literal(Constant(a.toString)))
   }
 
   def caseFields[A : c.WeakTypeTag](): c.Expr[String] = {

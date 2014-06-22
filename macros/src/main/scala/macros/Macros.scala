@@ -5,7 +5,7 @@ import language.experimental.macros
 import scala.reflect.macros.blackbox
 import blackbox.Context // default to whitebox to be compatable
 
-object Macros {
+object Macros extends CaseFunctions with DebugFunctions {
 
   def hello(): Unit = macro hello_impl
 

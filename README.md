@@ -33,3 +33,17 @@ def hello(): Unit = macro hello_impl
 
 hello()
 ```
+
+## Refs
+
+[Exploring scala macros map to case class conversion](http://blog.echo.sh/post/65955606729/exploring-scala-macros-map-to-case-class-conversion)
+[Quasiquotes](http://docs.scala-lang.org/overviews/quasiquotes/intro.html)
+[Quasiquotes for multiple paramater lists](http://meta.plasm.us/posts/2013/09/06/quasiquotes-for-multiple-parameter-lists/)
+[Figi](https://github.com/ncreep/figi/blob/master/macros/src/main/scala/ncreep/figi/Figi.scala)
+[Debugging scala macros](http://www.cakesolutions.net/teamblogs/2013/09/30/debugging-scala-macros)
+[Debug macro](https://github.com/adamw/scala-macro-debug/blob/master/macros/src/main/scala/com/softwaremill/debug/DebugMacros.scala)
+[Scala Lang Macro Doc](http://docs.scala-lang.org/overviews/macros/overview.html)
+[Learning scala macros](http://imranrashid.com/posts/learning-scala-macros/)
+[Quasiquotes for scala](http://infoscience.epfl.ch/record/185242/files/QuasiquotesForScala.pdf)
+[parse](http://stackoverflow.com/questions/14790115/where-can-i-learn-about-constructing-asts-for-scala-macros/14795999#14795999)
+[Symbols trees and types](http://docs.scala-lang.org/overviews/reflection/symbols-trees-types.html#trees)

@@ -10,6 +10,8 @@ trait CaseFunctions {
   def extractCaseName[A]: String = macro CaseClassMacros.name[A]
 
   def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMap[A]
+
+  def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMap[A]
 }
 
 object Case extends CaseFunctions
@@ -45,6 +47,26 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     }
 
     c.Expr[Map[String, Any]](q"Map(..$mapEntries)")
+  }
+
+  def fromMap[A: c.WeakTypeTag](m: c.Expr[Map[String, Any]]): c.Expr[A] = {
+    val tpe = weakTypeOf[A]
+
+    val declarations = tpe.decls
+    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+    val params = ctor.paramLists.head
+
+    val companion = tpe.typeSymbol.companionSymbol
+
+    val mapEntries = params map { param =>
+      val name = param.name
+      val mapKey: String = name.decodedName.toString
+      val returnType = tpe.declaration(name).typeSignature
+
+      q"${m.tree}($mapKey).asInstanceOf[$returnType]"
+    }
+
+    c.Expr[A](q"$companion(..$mapEntries)")
   }
 
 }

@@ -85,5 +85,10 @@ class MacroTests extends FreeSpecLike with Matchers {
 
     debug(userMap)
     debug(fooMap)
+
+    debug(fromMap[User](userMap))
+    debug(fromMap[Foo](fooMap))
+
+    debug(fromMap[User](fooMap))
   }
 }

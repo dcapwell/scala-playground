@@ -112,9 +112,9 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(user)
   }
 
-  "tuple to case of different shape" in {
-    val user = fromTuple[User]("bob", "hi")
-
-    debug(user)
-  }
+//  "tuple to case of different shape" in {
+//    val user = fromTuple[User]("bob", "hi")
+//
+//    debug(user)
+//  }
 }

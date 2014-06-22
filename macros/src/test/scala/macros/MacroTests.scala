@@ -73,4 +73,11 @@ class MacroTests extends FreeSpecLike with Matchers {
 
     debug(data)
   }
+
+  "case to map" in {
+    val user = User("bob", 38, 'M')
+
+    val map = toMap(user)
+    debug(map)
+  }
 }

@@ -7,7 +7,9 @@ import scala.reflect.macros.whitebox
 trait CaseFunctions {
   def caseFields[A](): String = macro CaseClassMacros.caseFields[A]
 
-  def extractCaseName[T]: String = macro CaseClassMacros.name[T]
+  def extractCaseName[A]: String = macro CaseClassMacros.name[A]
+
+  def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMap[A]
 }
 
 object Case extends CaseFunctions
@@ -26,6 +28,23 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     val tag = implicitly[WeakTypeTag[A]]
     val data = caseMethods(tag.tpe) map(_.name) map(_.toString) mkString(", ")
     c.Expr[String](Literal(Constant(data)))
+  }
+
+  def toMap[A : c.WeakTypeTag](a: c.Expr[A]): c.Expr[Map[String, Any]] = {
+    val tpe = weakTypeOf[A]
+
+    val declarations = tpe.decls
+    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+    val params = ctor.paramLists.head
+
+    val mapEntries = params map { param =>
+      val name = param.name
+      val mapKey: String = name.decodedName.toString
+
+      q"($mapKey -> ${a.tree}.${name.toTermName})"
+    }
+
+    c.Expr[Map[String, Any]](q"Map(..$mapEntries)")
   }
 
 }

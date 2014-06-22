@@ -21,7 +21,7 @@ object build extends Build {
     settings = buildSettings ++ Seq(
       run <<= run in Compile in core
     )
-  ) aggregate(macros, core)
+  ) aggregate(macros, core) dependsOn(macros, core)
 
   lazy val macros: Project = Project(
     "macros",

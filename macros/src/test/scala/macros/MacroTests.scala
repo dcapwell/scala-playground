@@ -89,6 +89,7 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(fromMap[User](userMap))
     debug(fromMap[Foo](fooMap))
 
+    // can't know at compile time that this won't work, since value type is any
     debug(fromMap[User](fooMap))
   }
 
@@ -103,5 +104,17 @@ class MacroTests extends FreeSpecLike with Matchers {
 
     debug(sic(toTuple(User("bob", 38, 'M'))))
 //    debug(sic(toTuple(Foo("bar", "baz"))))
+  }
+
+  "tuple to case" in {
+    val user = fromTuple[User]("bob", 38, 'm')
+
+    debug(user)
+  }
+
+  "tuple to case of different shape" in {
+    val user = fromTuple[User]("bob", "hi")
+
+    debug(user)
   }
 }

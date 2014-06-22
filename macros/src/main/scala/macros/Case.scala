@@ -5,15 +5,17 @@ import language.experimental.macros
 import scala.reflect.macros.whitebox
 
 trait CaseFunctions {
-  def caseFields[A](): String = macro CaseClassMacros.caseFields[A]
+  def caseFields[A](): List[String] = macro CaseClassMacros.caseFieldsMacro[A]
 
-  def extractCaseName[A]: String = macro CaseClassMacros.name[A]
+  def extractCaseName[A]: String = macro CaseClassMacros.nameMacro[A]
 
-  def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMap[A]
+  def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMapMacro[A]
 
-  def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMap[A]
+  def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMapMacro[A]
 
-  def toTuple[A](a: A): Any = macro CaseClassMacros.toTuple[A]
+  def toTuple[A](a: A): Any = macro CaseClassMacros.toTupleMacro[A]
+
+  def fromTuple[A](p: Product): A = macro CaseClassMacros.fromTupleMacro[A]
 }
 
 object Case extends CaseFunctions
@@ -21,25 +23,29 @@ object Case extends CaseFunctions
 class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
   import c.universe._
 
-  def name[A: c.WeakTypeTag]: c.Expr[String] = {
+  def nameMacro[A: c.WeakTypeTag]: c.Expr[String] = {
     val a = weakTypeOf[A]
     assertCaseClass(a)
 
-    c.Expr[String](Literal(Constant(a.toString)))
+    val fields = caseFields(a) map(f => s"${f.name.toString}: ${f.typeSignature}") mkString(", ")
+
+    c.Expr[String](Literal(Constant(s"$a($fields)")))
   }
 
-  def caseFields[A : c.WeakTypeTag](): c.Expr[String] = {
-    val tag = implicitly[WeakTypeTag[A]]
-    val data = caseMethods(tag.tpe) map(_.name) map(_.toString) mkString(", ")
-    c.Expr[String](Literal(Constant(data)))
-  }
-
-  def toMap[A : c.WeakTypeTag](a: c.Expr[A]): c.Expr[Map[String, Any]] = {
+  def caseFieldsMacro[A : c.WeakTypeTag](): c.Expr[List[String]] = {
     val tpe = weakTypeOf[A]
 
-    val declarations = tpe.decls
-    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
-    val params = ctor.paramLists.head
+    val params = caseFields(tpe)
+
+    val data = params.map(_.name).map(_.toString)
+    
+    c.Expr[List[String]](q"$data")
+  }
+
+  def toMapMacro[A : c.WeakTypeTag](a: c.Expr[A]): c.Expr[Map[String, Any]] = {
+    val tpe = weakTypeOf[A]
+
+    val params = caseFields(tpe)
 
     val mapEntries = params map { param =>
       val name = param.name
@@ -51,19 +57,16 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     c.Expr[Map[String, Any]](q"Map(..$mapEntries)")
   }
 
-  def fromMap[A: c.WeakTypeTag](m: c.Expr[Map[String, Any]]): c.Expr[A] = {
+  def fromMapMacro[A: c.WeakTypeTag](m: c.Expr[Map[String, Any]]): c.Expr[A] = {
     val tpe = weakTypeOf[A]
 
-    val declarations = tpe.decls
-    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
-    val params = ctor.paramLists.head
-
-    val companion = tpe.typeSymbol.companionSymbol
+    val params = caseFields(tpe)
+    val companion = companionObject(tpe)
 
     val mapEntries = params map { param =>
       val name = param.name
       val mapKey: String = name.decodedName.toString
-      val returnType = tpe.declaration(name).typeSignature
+      val returnType = tpe.decl(name).typeSignature
 
       q"${m.tree}($mapKey).asInstanceOf[$returnType]"
     }
@@ -71,12 +74,10 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     c.Expr[A](q"$companion(..$mapEntries)")
   }
 
-  def toTuple[A : c.WeakTypeTag](a: c.Expr[A]): Tree = {
+  def toTupleMacro[A : c.WeakTypeTag](a: c.Expr[A]): Tree = {
     val tpe = weakTypeOf[A]
 
-    val declarations = tpe.decls
-    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
-    val params = ctor.paramLists.head
+    val params = caseFields(tpe)
 
     val paramCalls = params map { param =>
       val name = param.name
@@ -85,6 +86,32 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     }
 
     q"(..$paramCalls)"
+  }
+
+  def fromTupleMacro[A : c.WeakTypeTag](p: c.Expr[Product]): Tree = {
+    val tpe = weakTypeOf[A]
+
+    // get case class params list
+    val params = caseFields(tpe)
+
+    // verify that tuple size matches params
+    val size = params.size
+    val types = params map(_.typeSignature.toString)
+
+
+    // figure out how to generate the right tuple type and verify that the input matches that type
+
+//    val untypedtree: Tree =
+//      TypeApply(Select(Ident(TermName("scala")), TermName(s"Tuple$size")), types map(t => Ident(TypeName(t))))
+
+//    if(p.actualType =:=(untypedtree.tpe)) {
+      // convert
+      val comp = companionObject(tpe)
+
+      val tuped = (1 to size) map{index => Select(p.tree, TermName(s"_$index"))}
+
+      q"$comp(..$tuped)"
+//    } else c.abort(c.enclosingPosition, s"Expected input type must be scala.Tuple$size[${types.mkString(", ")}}]")
   }
 
 }
@@ -100,11 +127,15 @@ trait CaseClassMacroBox { self =>
     sym.isClass && sym.asClass.isCaseClass
   }
 
-  def assertCaseClass(t: Type): Unit = {
+  def assertCaseClass(t: Type): Unit =
     if(!isCaseClass(t)) c.abort(c.enclosingPosition, s"${t.typeSymbol} is not a case class")
-  }
 
-  def caseMethods(t: Type): List[MethodSymbol] = t.members.collect {
-    case m: MethodSymbol if m.isCaseAccessor => m
-  }.toList
+  def primaryConstructor(t: Type): MethodSymbol =
+    t.decls.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+
+  def companionObject(t: Type): Symbol =
+    t.typeSymbol.companion
+
+  def caseFields(t: Type): List[Symbol] =
+    primaryConstructor(t).paramLists.head
 }

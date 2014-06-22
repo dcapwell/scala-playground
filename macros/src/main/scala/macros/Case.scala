@@ -12,6 +12,8 @@ trait CaseFunctions {
   def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMap[A]
 
   def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMap[A]
+
+  def toTuple[A, B](a: A): B = macro CaseClassMacros.toTuple[A]
 }
 
 object Case extends CaseFunctions
@@ -67,6 +69,22 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     }
 
     c.Expr[A](q"$companion(..$mapEntries)")
+  }
+
+  def toTuple[A : c.WeakTypeTag](a: c.Expr[A]): Tree = {
+    val tpe = weakTypeOf[A]
+
+    val declarations = tpe.decls
+    val ctor = declarations.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+    val params = ctor.paramLists.head
+
+    val paramCalls = params map { param =>
+      val name = param.name
+
+      q"${a.tree}.${name.toTermName}"
+    }
+
+    q"(..$paramCalls)"
   }
 
 }

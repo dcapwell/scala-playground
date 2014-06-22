@@ -91,4 +91,12 @@ class MacroTests extends FreeSpecLike with Matchers {
 
     debug(fromMap[User](fooMap))
   }
+
+  "case to tuple" in {
+    // compile error if you don't give the types, since scala defaults to Nothing
+    debug(toTuple[User,(String, Int, Char)](User("bob", 38, 'M')))
+
+    // if we set it to any, the type will still be (String, Int, Char)
+    debug(toTuple[User,Any](User("bob", 38, 'M')))
+  }
 }

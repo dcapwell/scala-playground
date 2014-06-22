@@ -56,7 +56,7 @@ class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacr
         val paramRep = show(param.tree)
         val paramRepTree = Literal(Constant(paramRep))
         val paramRepExpr = c.Expr[String](paramRepTree)
-        q""" $builder.append($paramRepExpr).append(" = ").append($param) """
+        q""" $builder.append($paramRepExpr).append(": [").append(${param.actualType.toString}).append("] = ").append($param) """
       }
     }
 

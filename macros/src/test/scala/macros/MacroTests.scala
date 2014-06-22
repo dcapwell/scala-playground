@@ -6,6 +6,8 @@ import org.scalatest.{Matchers, FreeSpecLike}
 
 case class User(name: String, age: Int, sex: Char)
 
+case class Foo(name: String, desc: String)
+
 case class Event(name: String, createTS: Date, updateTS: Date)
 
 class MacroTests extends FreeSpecLike with Matchers {
@@ -77,7 +79,11 @@ class MacroTests extends FreeSpecLike with Matchers {
   "case to map" in {
     val user = User("bob", 38, 'M')
 
-    val map = toMap(user)
-    debug(map)
+    val userMap = toMap(user)
+    // intellij says this doesn't compile, but it will after macro expantion
+    val fooMap: Map[String, String] = toMap(Foo("bar", "baz"))
+
+    debug(userMap)
+    debug(fooMap)
   }
 }

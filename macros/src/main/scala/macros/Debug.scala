@@ -22,8 +22,6 @@ class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacr
     val paramRepTree = Literal(Constant(paramRep))
     val paramRepExpr = c.Expr[String](paramRepTree)
 
-    reify { println(paramRepExpr.splice + " = " + param.splice) }
-    //      q""" print($paramRepExpr + " = " + $param) """
     c.Expr[Unit](q""" println($paramRepExpr + " = " + $param) """)
   }
 
@@ -34,7 +32,10 @@ class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacr
         val paramRep = show(param.tree)
         val paramRepTree = Literal(Constant(paramRep))
         val paramRepExpr = c.Expr[String](paramRepTree)
-        q"""print($paramRepExpr + " = " + $param)"""
+
+        val tpe = param.actualType.toString
+
+        q"""print($paramRepExpr + ": [" + $tpe + "]" + " = " + $param)"""
       }
     }
 

@@ -13,7 +13,7 @@ trait CaseFunctions {
 
   def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMap[A]
 
-  def toTuple[A, B](a: A): B = macro CaseClassMacros.toTuple[A]
+  def toTuple[A](a: A): Any = macro CaseClassMacros.toTuple[A]
 }
 
 object Case extends CaseFunctions

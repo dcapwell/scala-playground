@@ -105,11 +105,5 @@ class TracingTest extends FreeSpecLike with Matchers {
     }
     Logger.info(code)
     compiler eval code
-//    compiler.eval(
-//      """import scala.concurrent.ExecutionContext.Implicits._
-//        |traceApply(scala.concurrent.Future{
-//        |"some work"
-//        |1
-//        |})""".stripMargin)
   }
 }

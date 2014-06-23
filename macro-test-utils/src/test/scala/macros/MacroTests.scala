@@ -138,16 +138,12 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(user)
   }
 
-
-
   "eval hello" in {
     val output = compiler.eval("""
         |hello()
       """.stripMargin)
 
     debug(output)
-
-    compiler.toolBox.frontEnd.infos.foreach(println)
   }
 
   "parse hello" in {

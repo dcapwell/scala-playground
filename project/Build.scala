@@ -27,6 +27,8 @@ object build extends Build {
     "core",
     file("core"),
     settings = buildSettings ++ Seq(
+      test := {},
+
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
     )

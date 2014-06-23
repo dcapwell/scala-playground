@@ -4,7 +4,8 @@ import java.util.Date
 
 import org.scalatest.{Matchers, FreeSpecLike}
 
-import scala.tools.reflect.{ToolBoxError, ToolBox}
+import scala.tools.reflect.ToolBoxError
+import compiler.Compiler
 
 case class User(name: String, age: Int, sex: Char)
 
@@ -13,8 +14,7 @@ case class Foo(name: String, desc: String)
 case class Event(name: String, createTS: Date, updateTS: Date)
 
 class MacroTests extends FreeSpecLike with Matchers {
-
-  import Macros._
+  import macros.Macros._
 
   "Hello macro prints hello world" in {
     hello()
@@ -135,7 +135,7 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(user)
   }
 
-  val compiler = Compiler.initialCommands("import macros._", "import Macros._")
+  val compiler = Compiler.initialCommands("import macros.macros._", "import Macros._")
 
   "eval hello" in {
     val output = compiler.eval("""

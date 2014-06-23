@@ -5,9 +5,7 @@ package macros
  */
 object Scratch {
 
-  import language.experimental.macros
-
-  import scala.reflect.macros.whitebox
+  import scala.language.experimental.macros
 
 //  def captureParam_impl(c: whitebox.Context)(param: c.Expr[Any]): c.Expr[Unit] = {
 //    import c.universe._

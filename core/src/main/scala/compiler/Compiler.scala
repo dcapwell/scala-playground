@@ -1,4 +1,4 @@
-package macros
+package compiler
 
 import java.io.File
 
@@ -29,6 +29,7 @@ class Compiler(options: List[String] = List(), initialCommands: List[String] = L
 
   def eval(code: String): Any =
     toolBox.eval(parse(code))
+
 }
 
 object Compiler {

@@ -21,25 +21,36 @@ object build extends Build {
     settings = buildSettings ++ Seq(
       run <<= run in Compile in core
     )
-  ) aggregate(macros, core, logging) dependsOn(macros, core, logging)
+  ) aggregate(macros, macroTestUtils, core, logging) dependsOn(macros, macroTestUtils, core, logging)
+
+  lazy val core: Project = Project(
+    "core",
+    file("core"),
+    settings = buildSettings ++ Seq(
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
+    )
+  )
 
   lazy val macros: Project = Project(
     "macros",
     file("macros"),
     settings = buildSettings ++ Seq(
-      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
-      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
-//      libraryDependencies += "org.scalamacros" %% "quasiquotes" % paradiseVersion, // only needed in 2.10
+      test := {},
 
-      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
+      //      libraryDependencies += "org.scalamacros" %% "quasiquotes" % paradiseVersion, // only needed in 2.10
     )
   )
 
-  lazy val core: Project = Project(
-    "core",
-    file("core"),
-    settings = buildSettings
-  ) dependsOn(macros)
+  lazy val macroTestUtils = Project(
+    "macro-test-utils",
+    file("macro-test-utils"),
+    settings = buildSettings ++ Seq(
+      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+    )
+  ) dependsOn(core, macros)
 
   lazy val logging = Project(
     "logging",
@@ -48,7 +59,7 @@ object build extends Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _ % "test")
     )
-  ) dependsOn(core, macros)
+  ) dependsOn(core, macros, macroTestUtils)
 
 }
 

@@ -1,9 +1,8 @@
 package macros
 
-import language.experimental.macros
-
+import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
-import blackbox.Context // default to whitebox to be compatable
+import scala.reflect.macros.blackbox.Context // default to whitebox to be compatable
 
 object Macros extends CaseFunctions with DebugFunctions {
 
@@ -37,3 +36,4 @@ object Macros extends CaseFunctions with DebugFunctions {
   }
 
 }
+

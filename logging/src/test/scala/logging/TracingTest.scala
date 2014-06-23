@@ -1,16 +1,18 @@
 package logging
 
+import compiler.Compiler
+import playground.macros.test.EvalMacro
 import org.scalatest.{FreeSpecLike, Matchers}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 
 /**
- * These tests are to play around with logging powered by macros
+ * These tests are to play around with logging powered by macros.macros
  */
 class TracingTest extends FreeSpecLike with Matchers {
-  import Logger.{trace, raw}
+  import Logger._
 
-  val compiler = macros.Compiler.initialCommands("import logging._", "import Logger._")
+  val compiler = new Compiler(initialCommands = List("import logging._", "import Logger._")) with EvalMacro
 
   "trace calling at the method level" in {
     def longRunning: String = trace {
@@ -68,13 +70,46 @@ class TracingTest extends FreeSpecLike with Matchers {
   }
 
   import scala.concurrent.ExecutionContext.Implicits._
+  import scala.concurrent.duration._
 
   "trace future" in {
     val f: Future[Int] = trace(Future(1))
+    val data = Await.result(f, 1.second)
+    data shouldBe 1
   }
 
   "raw future" in {
     val data = raw(Future(1))
     println(data)
+  }
+
+  "trace apply future" in {
+    val f: Future[Int] = traceApply(Future(1))
+    val data = Await.result(f, 1.second)
+    data shouldBe 1
+  }
+
+  "trace apply future in compiler" in {
+    compiler.eval(
+      """import scala.concurrent.ExecutionContext.Implicits._
+        |traceApply(scala.concurrent.Future(1))""".stripMargin)
+  }
+
+  "trace work in apply future in compiler" in {
+    val code = stringify {
+      import scala.concurrent.ExecutionContext.Implicits._
+      traceApply(scala.concurrent.Future[Int] {
+        "some work"
+        1
+      })
+    }
+    Logger.info(code)
+    compiler eval code
+//    compiler.eval(
+//      """import scala.concurrent.ExecutionContext.Implicits._
+//        |traceApply(scala.concurrent.Future{
+//        |"some work"
+//        |1
+//        |})""".stripMargin)
   }
 }

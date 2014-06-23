@@ -50,4 +50,4 @@ roleInstances.add(clusterId)(ris)
     * `(update-in users [:david] (fn [user] (merge user {:win-factor 9001})))`
     * `(assoc-in users [:missing-user :age] 38)`
     * destructors for case classes, maps, and lists 
-      * `def foo(input: Destructor[Name, Age]) = (input.name, input.age); foo(User("bob", 38))`
+      * `def foo(input: Destructor("name", "age")) = (input.name, input.age); foo(User("bob", 38))`

@@ -30,7 +30,8 @@ object build extends Build {
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
 //      libraryDependencies += "org.scalamacros" %% "quasiquotes" % paradiseVersion, // only needed in 2.10
 
-      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test",
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _ % "test")
     )
   )
 

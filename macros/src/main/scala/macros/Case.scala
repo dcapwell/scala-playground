@@ -96,22 +96,20 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
 
     // verify that tuple size matches params
     val size = params.size
-    val types = params map(_.typeSignature.toString)
 
+    // get the types from each, and convert aliases into expected form
+    val paramSigs = params map(_.typeSignature.dealias)
+    val inputTypeArgs = p.actualType.typeArgs.map(_.dealias)
 
-    // figure out how to generate the right tuple type and verify that the input matches that type
-
-//    val untypedtree: Tree =
-//      TypeApply(Select(Ident(TermName("scala")), TermName(s"Tuple$size")), types map(t => Ident(TypeName(t))))
-
-//    if(p.actualType =:=(untypedtree.tpe)) {
+    //TODO find a way to validate that the type is TupleX vs anything that has matching type params
+    if(inputTypeArgs == paramSigs) {
       // convert
       val comp = companionObject(tpe)
 
       val tuped = (1 to size) map{index => Select(p.tree, TermName(s"_$index"))}
 
       q"$comp(..$tuped)"
-//    } else c.abort(c.enclosingPosition, s"Expected input type must be scala.Tuple$size[${types.mkString(", ")}}]")
+    } else c.abort(c.enclosingPosition, s"Expected type is scala.Tuple$size[${paramSigs.mkString(", ")}], but given ${p.actualType}")
   }
 
 }

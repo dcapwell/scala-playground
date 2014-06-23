@@ -4,6 +4,8 @@ import java.util.Date
 
 import org.scalatest.{Matchers, FreeSpecLike}
 
+import scala.tools.reflect.{ToolBoxError, ToolBox}
+
 case class User(name: String, age: Int, sex: Char)
 
 case class Foo(name: String, desc: String)
@@ -90,7 +92,12 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(fromMap[Foo](fooMap))
 
     // can't know at compile time that this won't work, since value type is any
-    debug(fromMap[User](fooMap))
+//    intercept[Throwable] {
+//      compiler.eval(
+//        """
+//          |val fooMap: Map[String, String] = Map("name" -> "name", "desc" -> "desc")
+//          |fromMap[User](fooMap)""".stripMargin)
+//    }.getMessage.split("\n").drop(2).head shouldBe "key not found: age"
   }
 
   "case to tuple" in {
@@ -107,14 +114,34 @@ class MacroTests extends FreeSpecLike with Matchers {
   }
 
   "tuple to case" in {
-    val user = fromTuple[User]("bob", 38, 'm')
+    val user = compiler.eval("""fromTuple[User]("bob", 38, 'm')""")
 
     debug(user)
   }
 
-//  "tuple to case of different shape" in {
-//    val user = fromTuple[User]("bob", "hi")
-//
-//    debug(user)
-//  }
+  val compiler = Compiler.initialCommands("import macros._", "import Macros._")
+
+  "eval hello" in {
+    val output = compiler.eval("""
+        |hello()
+      """.stripMargin)
+
+    debug(output)
+
+    compiler.toolBox.frontEnd.infos.foreach(println)
+  }
+
+  "parse hello" in {
+    val output = compiler.parse("""
+                        |hello()
+                      """.stripMargin)
+
+    debug(output)
+  }
+
+  "tuple to case of different shape" in {
+    intercept[ToolBoxError] {
+      compiler eval """ fromTuple[User]("bob", "hi") """
+    }.getMessage.split("\n").drop(2).head shouldBe "Expected type is scala.Tuple3[String, Int, Char], but given (String, String)"
+  }
 }

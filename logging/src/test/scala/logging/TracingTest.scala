@@ -53,9 +53,6 @@ class TracingTest extends FreeSpecLike with Matchers {
     }: PartialFunction[Int, Int])
 
     val output = Logger.info(tree)
-
-//    val t = new Throwable().fillInStackTrace()
-//    t.getStackTrace foreach println
   }
 
   "partial function raw compiled" in {

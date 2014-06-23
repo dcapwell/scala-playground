@@ -3,6 +3,7 @@ package macros
 import java.util.Date
 
 import org.scalatest.{Matchers, FreeSpecLike}
+import playground.macros.test.EvalMacro
 
 import scala.tools.reflect.ToolBoxError
 import compiler.Compiler
@@ -15,6 +16,8 @@ case class Event(name: String, createTS: Date, updateTS: Date)
 
 class MacroTests extends FreeSpecLike with Matchers {
   import macros.Macros._
+
+  val compiler = new Compiler(initialCommands = List("import macros._", "import Macros._")) with EvalMacro
 
   "Hello macro prints hello world" in {
     hello()
@@ -135,7 +138,7 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug(user)
   }
 
-  val compiler = Compiler.initialCommands("import macros.macros._", "import Macros._")
+
 
   "eval hello" in {
     val output = compiler.eval("""
@@ -157,7 +160,11 @@ class MacroTests extends FreeSpecLike with Matchers {
 
   "tuple to case of different shape" in {
     intercept[ToolBoxError] {
-      compiler eval """ fromTuple[User]("bob", "hi") """
+      compiler.eval("""
+                      |case class User(name: String, age: Int, sex: Char)
+                      |
+                      |fromTuple[User]("bob", "hi")
+                    """.stripMargin)
     }.getMessage.split("\n").drop(2).head shouldBe "Expected type is scala.Tuple3[String, Int, Char], but given (String, String)"
   }
 }

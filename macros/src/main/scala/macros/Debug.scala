@@ -10,12 +10,20 @@ trait DebugFunctions {
   def debug(params: Any*): Unit = macro DebugMacros.debug
 
   def sdebug(params: Any*): String = macro DebugMacros.sdebug
+
+  def stringify(param: => Any): String = macro DebugMacros.stringify
 }
 
 object Debug extends DebugFunctions
 
 class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacroBox {
   import c.universe._
+
+  def stringify(param: Expr[Any]): c.Expr[String] = {
+    val paramRep = show(param.tree)
+    val paramRepTree = Literal(Constant(paramRep))
+    c.Expr[String](paramRepTree)
+  }
 
   def debug1(param: Expr[Any]): Expr[Unit] = {
     val paramRep = show(param.tree)

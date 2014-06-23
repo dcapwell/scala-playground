@@ -62,6 +62,22 @@ class MacroTests extends FreeSpecLike with Matchers {
     debug("checking list but with type alias", caseFields[({ type V = List[Int] })#V])
   }
 
+  "expr toString" in {
+    debug(stringify {
+      "this is just a test"
+      println("to see how good")
+    })
+
+    debug(stringify(debug("hi")))
+
+    debug(stringify("hi"))
+
+    val foo = "bar"
+    debug(stringify(foo))
+
+    debug(stringify(debug(stringify(foo))))
+  }
+
   "create object" in {
     trait FooBar {
       println("created")

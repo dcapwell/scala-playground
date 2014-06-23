@@ -2,6 +2,8 @@ package logging
 
 import org.scalatest.{FreeSpecLike, Matchers}
 
+import scala.concurrent.Future
+
 /**
  * These tests are to play around with logging powered by macros
  */
@@ -63,5 +65,16 @@ class TracingTest extends FreeSpecLike with Matchers {
         |      case 2 => 2
         |    }: PartialFunction[Int, Int])
         |info(tree)""".stripMargin)
+  }
+
+  import scala.concurrent.ExecutionContext.Implicits._
+
+  "trace future" in {
+    val f: Future[Int] = trace(Future(1))
+  }
+
+  "raw future" in {
+    val data = raw(Future(1))
+    println(data)
   }
 }

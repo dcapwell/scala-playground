@@ -3,7 +3,6 @@ package macros
 import java.util.Date
 
 import org.scalatest.{Matchers, FreeSpecLike}
-import playground.macros.test.EvalMacro
 
 import scala.tools.reflect.ToolBoxError
 import compiler.Compiler
@@ -17,7 +16,7 @@ case class Event(name: String, createTS: Date, updateTS: Date)
 class MacroTests extends FreeSpecLike with Matchers {
   import macros.Macros._
 
-  val compiler = new Compiler(initialCommands = List("import macros._", "import Macros._")) with EvalMacro
+  val compiler = new Compiler(initialCommands = List("import macros._", "import Macros._"))
 
   "Hello macro prints hello world" in {
     hello()

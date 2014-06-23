@@ -1,7 +1,6 @@
 package logging
 
 import compiler.Compiler
-import playground.macros.test.EvalMacro
 import org.scalatest.{FreeSpecLike, Matchers}
 
 import scala.concurrent.{Await, Future}
@@ -12,7 +11,7 @@ import scala.concurrent.{Await, Future}
 class TracingTest extends FreeSpecLike with Matchers {
   import Logger._
 
-  val compiler = new Compiler(initialCommands = List("import logging._", "import Logger._")) with EvalMacro
+  val compiler = new Compiler(initialCommands = List("import logging._", "import Logger._"))
 
   "trace calling at the method level" in {
     def longRunning: String = trace {
@@ -60,13 +59,22 @@ class TracingTest extends FreeSpecLike with Matchers {
   }
 
   "partial function raw compiled" in {
-    val output = compiler.eval(
-      """
-        |val tree: String = raw ({
-        |      case 1 => 1
-        |      case 2 => 2
-        |    }: PartialFunction[Int, Int])
-        |info(tree)""".stripMargin)
+    val code = stringify {
+      val tree: String = raw ({
+        case 1 => 1
+        case 2 => 2
+      }: PartialFunction[Int, Int])
+      logging.Logger.info(tree)
+    }
+    Logger.info(code)
+    compiler eval code
+//    val output = compiler.eval(
+//      """
+//        |val tree: String = raw ({
+//        |      case 1 => 1
+//        |      case 2 => 2
+//        |    }: PartialFunction[Int, Int])
+//        |info(tree)""".stripMargin)
   }
 
   import scala.concurrent.ExecutionContext.Implicits._
@@ -90,9 +98,12 @@ class TracingTest extends FreeSpecLike with Matchers {
   }
 
   "trace apply future in compiler" in {
-    compiler.eval(
-      """import scala.concurrent.ExecutionContext.Implicits._
-        |traceApply(scala.concurrent.Future(1))""".stripMargin)
+    val code = stringify {
+      import scala.concurrent.ExecutionContext.Implicits._
+      traceApply(scala.concurrent.Future(1))
+    }
+    Logger.info(code)
+    compiler eval code
   }
 
   "trace work in apply future in compiler" in {

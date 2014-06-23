@@ -34,7 +34,7 @@ class LoggerMacros(val c: blackbox.Context) {
     val caller = walkOwner(c.enclosingClass.symbol).reverse.map(_.name.toString).filterNot(_ == "<root>").mkString(".")
     val encPos = c.enclosingPosition
 
-    c.Expr[Unit]( q"""println("INFO  [2014-06-23 04:54:10,804] " + ${caller} + ":{" + ${encPos.line} + ":" + ${encPos.column} + "} " + $msg) """)
+    c.Expr[Unit]( q"""java.lang.System.out.println("INFO  [2014-06-23 04:54:10,804] " + ${caller} + ":{" + ${encPos.line} + ":" + ${encPos.column} + "} " + $msg) """)
   }
 
   def stringify(param: c.Expr[Any]): c.Expr[String] = {

@@ -27,8 +27,6 @@ object build extends Build {
     "core",
     file("core"),
     settings = buildSettings ++ Seq(
-      test := {},
-
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
     )
@@ -38,8 +36,6 @@ object build extends Build {
     "macros",
     file("macros"),
     settings = buildSettings ++ Seq(
-      test := {},
-
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
       //      libraryDependencies += "org.scalamacros" %% "quasiquotes" % paradiseVersion, // only needed in 2.10
@@ -61,7 +57,7 @@ object build extends Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _ % "test")
     )
-  ) dependsOn(core, macros, macroTestUtils)
+  ) dependsOn(core, macros, macroTestUtils % "test->test")
 
 }
 

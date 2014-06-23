@@ -3,6 +3,14 @@ scala-playground
 
 Playing with scala
 
+## Intellij Hack
+
+Intellij thinks that we care about test-classes directories for projects without tests... to get around this, run the following
+
+```bash
+mkdir -p {core,macros}/target/scala-2.11/test-classes
+```
+
 ## REPL
 
 To play around with macros.macros in the REPL, just add the following at the start of `sbt console`

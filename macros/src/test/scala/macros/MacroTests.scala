@@ -2,10 +2,11 @@ package macros
 
 import java.util.Date
 
+import compiler.Compiler
+
 import org.scalatest.{Matchers, FreeSpecLike}
 
 import scala.tools.reflect.ToolBoxError
-import compiler.Compiler
 
 case class User(name: String, age: Int, sex: Char)
 

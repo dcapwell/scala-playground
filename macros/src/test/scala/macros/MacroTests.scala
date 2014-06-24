@@ -8,12 +8,6 @@ import org.scalatest.{Matchers, FreeSpecLike}
 
 import scala.tools.reflect.ToolBoxError
 
-case class User(name: String, age: Int, sex: Char)
-
-case class Foo(name: String, desc: String)
-
-case class Event(name: String, createTS: Date, updateTS: Date)
-
 class MacroTests extends FreeSpecLike with Matchers {
   import macros.Macros._
 

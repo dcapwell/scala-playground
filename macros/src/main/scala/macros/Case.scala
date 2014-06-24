@@ -128,7 +128,7 @@ trait CaseClassMacroBox { self =>
     if(!isCaseClass(t)) c.abort(c.enclosingPosition, s"${t.typeSymbol} is not a case class")
 
   def primaryConstructor(t: Type): MethodSymbol =
-    t.decls.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.get
+    t.decls.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.getOrElse(c.abort(c.enclosingPosition, "Unable to find primary constructor for product"))
 
   def companionObject(t: Type): Symbol =
     t.typeSymbol.companion

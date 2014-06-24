@@ -42,7 +42,7 @@ class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacr
 
         val tpe = param.actualType.toString
 
-        q"""print($paramRepExpr + ": [" + $tpe + "]" + " = " + $param)"""
+        q"""print($paramRepExpr + ": " + $tpe + " = " + $param)"""
       }
     }
 

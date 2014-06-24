@@ -117,4 +117,15 @@ class TracingTest extends FreeSpecLike with Matchers {
     Logger.info(code)
     compiler eval code
   }
+
+  "inspect class creation" in {
+    val code = stringify {
+      trace {
+        case class Biz(you: String, should: Boolean)
+      }
+    }
+
+    Logger.info(code)
+    compiler eval code
+  }
 }

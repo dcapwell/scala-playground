@@ -3,8 +3,6 @@ package logging
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox
 
-// format:
-// INFO  [2014-06-23 04:54:10,804] $c.enclosingClass.name: $msg
 trait LoggerFunctions {
   self =>
 

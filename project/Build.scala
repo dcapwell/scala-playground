@@ -21,7 +21,7 @@ object build extends Build {
     settings = buildSettings ++ Seq(
       run <<= run in Compile in core
     )
-  ) aggregate(macros, core, logging) dependsOn(macros, core, logging)
+  ) aggregate(macros, core) dependsOn(macros, core)
 
   lazy val core: Project = Project(
     "core",
@@ -43,15 +43,6 @@ object build extends Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
     )
   ) dependsOn(core % "test")
-
-  lazy val logging = Project(
-    "logging",
-    file("logging"),
-    settings = buildSettings ++ Seq(
-      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _ % "test")
-    )
-  ) dependsOn(core, macros % "test->test")
 
 }
 

@@ -9,7 +9,7 @@ import scala.concurrent.{Await, Future}
  * These tests are to play around with logging powered by macros.macros
  */
 class TracingTest extends FreeSpecLike with Matchers {
-  import Logger._
+  import logging.Logger._
 
   val compiler = new Compiler(initialCommands = List("import logging._", "import Logger._"))
 

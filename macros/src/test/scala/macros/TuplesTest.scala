@@ -87,7 +87,7 @@ object TuplesTest {
 
 
   implicit class Tuple2Opts[A, B](val self: (A, B)) extends AnyVal {
-    def ::[C](c: C) = (c, self._1, self._2)
+    def ::[C](c: C): (C, A, B) = (c, self._1, self._2)
   }
 
   implicit class Tuple3Opts[A, B, C](val self: (A, B, C)) extends AnyVal {
@@ -107,5 +107,9 @@ object TuplesTest {
       assume(n == 2, "Only support drop 2 at the moment")
       (self._3, self._4, self._5)
     }
+
+    // def dropRight(n: Int)
+    // def take(n: Int)
+    // def takeRight(n: Int)
   }
 }

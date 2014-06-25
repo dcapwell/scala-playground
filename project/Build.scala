@@ -10,8 +10,12 @@ object build extends Build {
     scalacOptions ++= Seq("-deprecation", "-feature"),
     scalaVersion := "2.11.1",
     crossScalaVersions := Seq("2.11.0", "2.11.1"),
-    resolvers += Resolver.sonatypeRepo("snapshots"),
-    resolvers += Resolver.sonatypeRepo("releases"),
+    resolvers ++= Seq(
+      Resolver.sonatypeRepo("snapshots"),
+      Resolver.sonatypeRepo("releases"),
+      "Sonatype OSS Releases"  at "http://oss.sonatype.org/content/repositories/releases/",
+      "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
+    ),
     addCompilerPlugin("org.scalamacros" %% "paradise" % paradiseVersion cross CrossVersion.full)
   )
 
@@ -28,7 +32,11 @@ object build extends Build {
     file("core"),
     settings = buildSettings ++ Seq(
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
-      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _)
+      libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
+
+      libraryDependencies += "com.chuusai" %% "shapeless" % "2.0.0",
+      libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6",
+      libraryDependencies += "org.spire-math" %% "spire" % "0.7.5"
     )
   )
 

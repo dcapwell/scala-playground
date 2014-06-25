@@ -1,22 +1,16 @@
 package compiler
 
-import java.io.File
+import java.net.URLClassLoader
 
 import scala.tools.reflect.ToolBox
 
 class Compiler(options: List[String] = List(), initialCommands: List[String] = List()) {
 
-  val SysClasspath = System.getProperty("java.class.path").split(":").toList
+  lazy val SysClasspath = System.getProperty("java.class.path").split(":").toList
 
-  val Classath: List[String] = SysClasspath match {
-    // when run in SBT the call to System.getProperties will only contain the sbt jar
-    case x :: Nil if x.endsWith("sbt-launch.jar") =>
-      (for {
-        children <- new File(".").getAbsoluteFile.listFiles()
-        compiledDir <- List(new File(children, "target/scala-2.11/classes"), new File(children, "target/scala-2.11/test-classes"))
-        if compiledDir.exists()
-      } yield compiledDir.toString).toList
-    case xs => xs
+  val Classath: List[String] = Thread.currentThread().getContextClassLoader match {
+    case u: URLClassLoader => u.getURLs.toList.map(_.toString)
+    case _ => SysClasspath
   }
 
   val toolBox: ToolBox[_ <: scala.reflect.api.Universe] = {

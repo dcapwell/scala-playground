@@ -14,7 +14,7 @@ trait LoggerFunctions {
 
   def raw(param: => Any): String = macro LoggerMacros.raw
 
-  def stringify(param: => Any): String = macro LoggerMacros.stringify
+//  def stringify(param: => Any): String = macro LoggerMacros.stringify
 }
 
 object Logger extends LoggerFunctions

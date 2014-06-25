@@ -1,5 +1,6 @@
 package macros
 
+import java.io.File
 import java.util.Date
 
 import compiler.Compiler
@@ -127,7 +128,10 @@ class MacroTests extends FreeSpecLike with Matchers {
   }
 
   "tuple to case" in {
-    val user = compiler.eval("""fromTuple[User]("bob", 38, 'm')""")
+    val user = compiler.eval(
+      """
+        |import macros.Macros._
+        |fromTuple[User]("bob", 38, 'm')""".stripMargin)
 
     debug(user)
   }
@@ -156,5 +160,47 @@ class MacroTests extends FreeSpecLike with Matchers {
                       |fromTuple[User]("bob", "hi")
                     """.stripMargin)
     }.getMessage.split("\n").drop(2).head shouldBe "Expected type is scala.Tuple3[String, Int, Char], but given (String, String)"
+  }
+
+
+  "pimp my lib" in {
+    val code = stringify {
+      import Files._
+
+      val doesNotExistOpt = Files.Tmp / "foo" / "bar" / "baz" toOption
+
+      doesNotExistOpt shouldBe None
+    }
+
+    debug(code)
+  }
+}
+
+object Files {
+  /**
+   * Root file on the operating system
+   */
+  lazy val Root = new File("/")
+
+  /**
+   * Location of tmp on the system
+   */
+  lazy val Tmp = new File(System.getProperty("java.io.tmpdir", "/tmp"))
+
+  implicit class FileOpts(val file: File) extends AnyVal {
+    def /(child: String): File = new File(file, child)
+
+    def deleteAll: Boolean = {
+      if (file.isDirectory) for {p: File <- file.listFiles()} p.deleteAll
+      file.delete()
+    }
+
+    def toOption: Option[File] =
+      if(file.exists()) Some(file) else None
+
+    def children: List[File] = file.listFiles() match {
+      case null => List()
+      case e => e.toList
+    }
   }
 }

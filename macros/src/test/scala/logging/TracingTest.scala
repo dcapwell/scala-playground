@@ -10,6 +10,7 @@ import scala.concurrent.{Await, Future}
  */
 class TracingTest extends FreeSpecLike with Matchers {
   import logging.Logger._
+  import macros.Macros._
 
   val compiler = new Compiler(initialCommands = List("import logging._", "import Logger._"))
 
@@ -120,12 +121,9 @@ class TracingTest extends FreeSpecLike with Matchers {
 
   "inspect class creation" in {
     val code = stringify {
-      trace {
-        case class Biz(you: String, should: Boolean)
-      }
+      case class Biz(you: String, should: Boolean)
     }
 
-    Logger.info(code)
-    compiler eval code
+    debug(code)
   }
 }

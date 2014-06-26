@@ -15,11 +15,34 @@ trait CaseFunctions {
   def toTuple[A](a: A): Any = macro CaseClassMacros.toTupleMacro[A]
 
   def fromTuple[A](p: Product): A = macro CaseClassMacros.fromTupleMacro[A]
+
+  def matchType[A]: Unit = macro CaseClassMacros.matchType[A]
 }
 
 object Case extends CaseFunctions
 
 class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
+
+  def matchType[A : c.WeakTypeTag]: c.Expr[Unit] = {
+    import c.universe._
+
+    val tpe = weakTypeOf[A]
+
+    val typeString: String = "scala.Tuple3"
+    val typeSymbol = c.mirror.staticClass(typeString).asType
+    val typeSymbolParams = typeSymbol.typeParams
+
+    val givenSymboles = tpe.typeArgs.map(_.typeSymbol)
+
+    if(typeSymbolParams.size != givenSymboles.size) c.abort(c.enclosingPosition, s"Arity does not match; given $givenSymboles, but expected $typeSymbolParams")
+
+    val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
+
+
+    if(! (tpe =:= typeCreated)) c.abort(c.enclosingPosition, s"Expected type is $typeCreated but was given $tpe")
+    c.Expr[Unit](Literal(Constant(())))
+  }
+
   import c.universe._
 
   def nameMacro[A: c.WeakTypeTag]: c.Expr[String] = {
@@ -99,6 +122,9 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     // get the types from each, and convert aliases into expected form
     val paramSigs = params map(_.typeSignature.dealias)
     val inputTypeArgs = p.actualType.typeArgs.map(_.dealias)
+
+    val expectedTypeStr = s"scala.Tuple$size[${paramSigs.mkString(", ")}]"
+    c.mirror.staticClass(expectedTypeStr)
 
     //TODO find a way to validate that the type is TupleX vs anything that has matching type params
     if(inputTypeArgs == paramSigs) {

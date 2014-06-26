@@ -16,8 +16,8 @@ mkdir -p {core,macros}/target/scala-2.11/test-classes
 To play around with macros.macros in the REPL, just add the following at the start of `sbt console`
 
 ```scala
-import language.experimental.macros.macros
-import scala.reflect.macros.macros.{whitebox, blackbox}
+import language.experimental.macros
+import scala.reflect.macros.{whitebox, blackbox}
 import scala.annotation.StaticAnnotation
 import scala.reflect.runtime.{universe => ru}
 import ru._

@@ -10,7 +10,7 @@ import org.scalatest.{Matchers, FreeSpecLike}
 import scala.tools.reflect.ToolBoxError
 
 class MacroTests extends FreeSpecLike with Matchers {
-  import macros.Macros._
+  import Macros._
 
   val compiler = new Compiler(initialCommands = List("import macros._", "import Macros._"))
 

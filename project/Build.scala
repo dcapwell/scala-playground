@@ -37,6 +37,7 @@ object build extends Build {
       libraryDependencies += "com.chuusai" %% "shapeless" % "2.0.0",
       libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6",
       libraryDependencies += "org.spire-math" %% "spire" % "0.7.5",
+      libraryDependencies += "org.scala-stm" %% "scala-stm" % "0.7",
 
       // https://github.com/typelevel/shapeless-contrib is required to build locally first
       libraryDependencies += "org.typelevel" %% "shapeless-spire" % "0.3-SNAPSHOT",

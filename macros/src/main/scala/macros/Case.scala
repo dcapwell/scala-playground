@@ -108,22 +108,22 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     val params = caseFields(caseClassType).map(_.typeSignature.typeSymbol)
 
     val givenParams = typeSymbols(p.actualType)
-    if(givenParams == params) {
-      // verify that tuple size matches params
-      val size = params.size
 
-      val expectedType = s"scala.Tuple$size"
-      is(p.actualType, expectedType) match {
-        case Some(e) => c.abort(c.enclosingPosition, e)
-        case None =>
+    val size = params.size
+    val expectedType = s"scala.Tuple$size"
+    is(p.actualType, expectedType) match {
+      case Some(e) => c.abort(c.enclosingPosition, e)
+      case None =>
+        if(givenParams == params) {
           // convert
           val comp = companionObject(caseClassType)
+          //TODO check for <none> which seems to happen when you define the case class in the compiler eval statement
 
           val tuped = (1 to size) map{index => Select(p.tree, TermName(s"_$index"))}
 
           q"$comp(..$tuped)"
-      }
-    } else c.abort(c.enclosingPosition, s"Case class params ($params) does not match given params ($givenParams)")
+        } else c.abort(c.enclosingPosition, s"Case class params ($params) does not match given params ($givenParams)")
+    }
   }
 
 }
@@ -159,7 +159,7 @@ trait CaseClassMacroBox { self =>
     // given type
     val givenSymboles = typeSymbols(tpe)
 
-    if(typeSymbolParams.size != givenSymboles.size) Some(s"Arity does not match; given $givenSymboles, but expected $typeSymbolParams")
+    if(typeSymbolParams.size != givenSymboles.size) Some(s"Arity does not match; given ${toTypeString(tpe.typeSymbol, givenSymboles)}, but expected ${toTypeString(typeSymbol, typeSymbolParams)}")
     else {
       val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
 
@@ -167,6 +167,11 @@ trait CaseClassMacroBox { self =>
       if(! (tpe =:= typeCreated)) Some(s"Expected type is $typeCreated but was given $tpe")
       else None
     }
+  }
+
+  def toTypeString(clazz: Symbol, args: List[Symbol]): String = {
+    if(args.isEmpty) clazz.toString
+    else s"$clazz[${args.map(_.name).mkString(",")}]"
   }
 
   def typeSymbols(tpe: Type): List[Symbol] =

@@ -44,15 +44,18 @@ class CaseTest extends FreeSpecLike with Matchers {
   }
 
   "convert tuple using two case classes should not compile" in {
-    val code = stringify {
+    val code = """
+      import macros.CaseTest._
       val data = Foo("foo", "bar")
 
       import macros.Case._
       fromTuple[Foo](data)
-    }
+    """
 
     val foo = compiler eval code
     debug(foo)
+
+//    "Arity does not match; given class Foo, but expected class Tuple2[T1,T2]"
   }
 
 }

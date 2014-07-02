@@ -14,7 +14,7 @@ trait CaseFunctions {
 
   def toTuple[A](a: A): Any = macro CaseClassMacros.toTupleMacro[A]
 
-  def fromTuple[A](p: Product): A = macro CaseClassMacros.fromTupleMacro[A]
+  def fromTuple[CaseClass](p: Product): CaseClass = macro CaseClassMacros.fromTupleMacro[CaseClass]
 
   def matchType[A]: Unit = macro CaseClassMacros.matchType[A]
 }
@@ -28,19 +28,10 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
 
     val tpe = weakTypeOf[A]
 
-    val typeString: String = "scala.Tuple3"
-    val typeSymbol = c.mirror.staticClass(typeString).asType
-    val typeSymbolParams = typeSymbol.typeParams
-
-    val givenSymboles = tpe.typeArgs.map(_.typeSymbol)
-
-    if(typeSymbolParams.size != givenSymboles.size) c.abort(c.enclosingPosition, s"Arity does not match; given $givenSymboles, but expected $typeSymbolParams")
-
-    val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
-
-
-    if(! (tpe =:= typeCreated)) c.abort(c.enclosingPosition, s"Expected type is $typeCreated but was given $tpe")
-    c.Expr[Unit](Literal(Constant(())))
+    is(tpe, "scala.Tuple3") match {
+      case Some(e) => c.abort(c.enclosingPosition, e)
+      case None => c.Expr[Unit](Literal(Constant(())))
+    }
   }
 
   import c.universe._
@@ -110,31 +101,29 @@ class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     q"(..$paramCalls)"
   }
 
-  def fromTupleMacro[A : c.WeakTypeTag](p: c.Expr[Product]): Tree = {
-    val tpe = weakTypeOf[A]
+  def fromTupleMacro[CaseClass : c.WeakTypeTag](p: c.Expr[Product]): Tree = {
+    val caseClassType = weakTypeOf[CaseClass]
 
     // get case class params list
-    val params = caseFields(tpe)
+    val params = caseFields(caseClassType).map(_.typeSignature.typeSymbol)
 
-    // verify that tuple size matches params
-    val size = params.size
+    val givenParams = typeSymbols(p.actualType)
+    if(givenParams == params) {
+      // verify that tuple size matches params
+      val size = params.size
 
-    // get the types from each, and convert aliases into expected form
-    val paramSigs = params map(_.typeSignature.dealias)
-    val inputTypeArgs = p.actualType.typeArgs.map(_.dealias)
+      val expectedType = s"scala.Tuple$size"
+      is(p.actualType, expectedType) match {
+        case Some(e) => c.abort(c.enclosingPosition, e)
+        case None =>
+          // convert
+          val comp = companionObject(caseClassType)
 
-    val expectedTypeStr = s"scala.Tuple$size[${paramSigs.mkString(", ")}]"
-    c.mirror.staticClass(expectedTypeStr)
+          val tuped = (1 to size) map{index => Select(p.tree, TermName(s"_$index"))}
 
-    //TODO find a way to validate that the type is TupleX vs anything that has matching type params
-    if(inputTypeArgs == paramSigs) {
-      // convert
-      val comp = companionObject(tpe)
-
-      val tuped = (1 to size) map{index => Select(p.tree, TermName(s"_$index"))}
-
-      q"$comp(..$tuped)"
-    } else c.abort(c.enclosingPosition, s"Expected type is scala.Tuple$size[${paramSigs.mkString(", ")}], but given ${p.actualType}")
+          q"$comp(..$tuped)"
+      }
+    } else c.abort(c.enclosingPosition, s"Case class params ($params) does not match given params ($givenParams)")
   }
 
 }
@@ -161,4 +150,25 @@ trait CaseClassMacroBox { self =>
 
   def caseFields(t: Type): List[Symbol] =
     primaryConstructor(t).paramLists.head
+
+  def is(tpe: Type, typeString: String): Option[String] = {
+    // expected type
+    val typeSymbol = c.mirror.staticClass(typeString).asType
+    val typeSymbolParams = typeSymbol.typeParams
+
+    // given type
+    val givenSymboles = typeSymbols(tpe)
+
+    if(typeSymbolParams.size != givenSymboles.size) Some(s"Arity does not match; given $givenSymboles, but expected $typeSymbolParams")
+    else {
+      val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
+
+
+      if(! (tpe =:= typeCreated)) Some(s"Expected type is $typeCreated but was given $tpe")
+      else None
+    }
+  }
+
+  def typeSymbols(tpe: Type): List[Symbol] =
+    tpe.typeArgs.map(_.typeSymbol.asType)
 }

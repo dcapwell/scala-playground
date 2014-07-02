@@ -4,6 +4,7 @@ import java.net.URLClassLoader
 
 import scala.tools.reflect.ToolBox
 
+// Look into https://github.com/twitter/util/blob/master/util-eval/src/main/scala/com/twitter/util/Eval.scala to replace this
 class Compiler(options: List[String] = List(), initialCommands: List[String] = List()) {
 
   lazy val SysClasspath = System.getProperty("java.class.path").split(":").toList

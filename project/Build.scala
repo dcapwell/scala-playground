@@ -40,11 +40,12 @@ object build extends Build {
       libraryDependencies += "org.scala-stm" %% "scala-stm" % "0.7",
 
       // https://github.com/typelevel/shapeless-contrib is required to build locally first
-      libraryDependencies += "org.typelevel" %% "shapeless-spire" % "0.3-SNAPSHOT",
-      libraryDependencies += "org.typelevel" %% "shapeless-scalaz" % "0.3-SNAPSHOT",
+      // don't use these yet, so removing for now
+      // libraryDependencies += "org.typelevel" %% "shapeless-spire" % "0.3-SNAPSHOT",
+      // libraryDependencies += "org.typelevel" %% "shapeless-scalaz" % "0.3-SNAPSHOT",
 
-      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      libraryDependencies += "org.typelevel" %% "shapeless-scalacheck" % "0.3-SNAPSHOT" % "test"
+      libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+      // libraryDependencies += "org.typelevel" %% "shapeless-scalacheck" % "0.3-SNAPSHOT" % "test"
     )
   )
 

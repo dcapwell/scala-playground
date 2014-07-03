@@ -9,17 +9,11 @@ class Compiler(options: List[String] = List(), initialCommands: List[String] = L
 
   lazy val SysClasspath = System.getProperty("java.class.path").split(":").toList
 
-  val Classpath: List[String] = {
-    val cp = Thread.currentThread().getContextClassLoader match {
-      case u: URLClassLoader => u.getURLs.toList.map(_.toString)
-      case _ => SysClasspath
-    }
-    if(cp.size == 1 && cp.head.endsWith("sbt-launch.jar")) {
-      // running in SBT, so we need to include the dirs that its ignoring...
-      import playground.java.io._
-      println(s"Walking $workingDir")
-      cp ::: workingDir.ls.filter(f => f.isDirectory && f.getName.endsWith("classes")).map(_.toString)
-    } else cp
+  // thread class loader will be "sbt-launcher.jar" if in sbt
+  // use the compiler's class loader to get the classes we care about
+  val Classpath: List[String] = classOf[Compiler].getClassLoader match {
+    case u: URLClassLoader => u.getURLs.toList.map(_.toString)
+    case _ => SysClasspath
   }
 
   val toolBox: ToolBox[_ <: scala.reflect.api.Universe] = {

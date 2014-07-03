@@ -2,8 +2,6 @@
 * Convert tuple/map to case class
 * macro type that auto adds FunctionX based off apply (extends Fn)
 * add "with" methods for each field
-* tuple mutation methods: x :: tuple(a, b) => tuple(x, a, b)
-
 
 * Slick
   * auto build slick tables from case classes
@@ -40,8 +38,28 @@ roleInstances.add(clusterId)(ris)
     * auto build show
 
 * Coding Utils
+  * make "case" in case class a macro
+    * examples
+        * `case class Foo(name: String)`
+            * same as current day case class but update methods per field
+        * `value class FooOpt(self: Foo)`
+            * short-hand for `class FooOpt(val self: Foo) extends AnyVal`
+        * `message class HttpIntent`
+            * similar to case class, but without copy or any updating methods
+    * This will be hard since this isn't supported in macros yet.  Could do it if each keyword is a 
+        * annotation
+            * `@case class Foo(name: String)`
+            * `@value class FooOpt(self: Foo)`
+            * `@message class HttpIntent`
+        * trait
+            * `class Foo(name: String) extends Case`
+            * `class FooOpt(self: Foo) extends Value`
+            * `class HttpIntent extends Message`
+      
   * traits with vals and extending traits override, lower traits null
-  * reorder collections calls, and combine functions when possible
+    * if you put a val with impl at trait A, and override it in trait B, all access of the val in trait A will see null
+        * make this a compiler error if A accesses the val
+  * reorder collections calls, and combine functions when possible (scala blits)
   * logging framework based off debug macro
   * if else chains not compiling if all states are not checked (sealed trait, adding new child)
   * given an object and a trait to mix in, create a proxy object with the trait mixed in
@@ -50,4 +68,6 @@ roleInstances.add(clusterId)(ris)
     * `(update-in users [:david] (fn [user] (merge user {:win-factor 9001})))`
     * `(assoc-in users [:missing-user :age] 38)`
     * destructors for case classes, maps, and lists 
-      * `def foo(input: Destructor("name", "age")) = (input.name, input.age); foo(User("bob", 38))`
+      * `def foo(name: Dest[String], age: Dest[Int]) = (name, age); foo(user("bob", 38)); foo(Map("name" -> "bob", "age" -> 38))`
+        * maps are tricky, is there a HMap like HList?
+        * Dest would have access to the function, but don't think it will have access to rewrite the caller...

@@ -159,7 +159,7 @@ class MacroTests extends FreeSpecLike with Matchers {
                       |
                       |fromTuple[User]("bob", "hi")
                     """.stripMargin)
-    }.getMessage.split("\n").drop(2).head shouldBe "Expected type is scala.Tuple3[String, Int, Char], but given (String, String)"
+    }.getMessage.split("\n").drop(2).head shouldBe "Arity does not match; given class Tuple2[String,String], but expected class Tuple3[T1,T2,T3]"
   }
 
 

@@ -26,7 +26,7 @@ class CaseTest extends FreeSpecLike with Matchers {
           |import macros.Case._
           |matchType[Tuple2[Int, Int]]
         """.stripMargin
-    }.message.split("\n").drop(2).head shouldBe "Arity does not match; given List(class Int, class Int), but expected List(type T1, type T2, type T3)"
+    }.message.split("\n").drop(2).head shouldBe "Arity does not match; given class Tuple2[Int,Int], but expected class Tuple3[T1,T2,T3]"
   }
 
   "convert tuple to case class" in {
@@ -52,10 +52,9 @@ class CaseTest extends FreeSpecLike with Matchers {
       fromTuple[Foo](data)
     """
 
-    val foo = compiler eval code
-    debug(foo)
-
-//    "Arity does not match; given class Foo, but expected class Tuple2[T1,T2]"
+    intercept[ToolBoxError] {
+      compiler eval code
+    }.message.split("\n").drop(2).head shouldBe "Arity does not match; given class Foo, but expected class Tuple2[T1,T2]"
   }
 
 }

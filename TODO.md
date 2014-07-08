@@ -2,6 +2,7 @@
 * Convert tuple/map to case class
 * macro type that auto adds FunctionX based off apply (extends Fn)
 * add "with" methods for each field
+* figure out if shapeless or scalaz lens can be used within the compiler as a way to make transformations simpler
 
 * Slick
   * auto build slick tables from case classes

@@ -9,6 +9,32 @@ class CaseClassMacros(val c: whitebox.Context) {
   import c.universe._
   import c.universe.Flag._
 
+  import scalaz.Lens
+
+  val modFlags = Lens.lensu[Modifiers, FlagSet](
+    set = (m, flags) => Modifiers(flags, m.privateWithin, m.annotations),
+    get = (m) => m.flags
+  )
+
+  val valMods = Lens.lensu[ValDef, Modifiers](
+    set = (v, m) => ValDef(m, v.name, v.tpt, v.rhs),
+    get = (v) => v.mods
+  )
+
+  val valFlags: Lens[ValDef, FlagSet] = valMods andThen modFlags
+
+  val templBody = Lens.lensu[Template, List[Tree]](
+    set = (t, b) => Template(t.parents, t.self, b),
+    get = (t) => t.body
+  )
+
+  val clazzTempl = Lens.lensu[ClassDef, Template](
+    set = (c, t) => ClassDef(c.mods, c.name, c.tparams, t),
+    get = (c) => c.impl
+  )
+  
+  val clazzBody: Lens[ClassDef, List[Tree]] = clazzTempl andThen templBody
+
   /**
    *  Given a normal class {{{class Foo(foo: String, bar: String)}}}, create a case class that looks identical to
    *  {{{case class Foo(foo: String, bar: String)}}}
@@ -29,7 +55,7 @@ class CaseClassMacros(val c: whitebox.Context) {
         }
 
 
-        ClassDef(modifiers, typeName, typeDefs, Template(parents, self, newBody ::: caseDefs))
+        injectProduct(ClassDef(modifiers, typeName, typeDefs, Template(parents, self, newBody ::: caseDefs)))
       case _ => abort("Only classes can use @CaseClass")
     }
   }
@@ -118,7 +144,18 @@ class CaseClassMacros(val c: whitebox.Context) {
    * }}}
    */
   //TODO should this also add ProductN based off the size?  That way a case class and a tuple are really the same thing
-  private def injectProduct = ???
+  private def injectProduct(clazz: ClassDef): ClassDef = {
+    val params = clazz.impl.body.collect{case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => v}
+
+    val classStr = clazz.name.toString
+    val prefix = q""" def productPrefix: String = $classStr; """
+
+
+    clazzBody.mod({body => body ::: List(prefix)}, clazz)
+  }
+
+  private def addMod(mods: Modifiers, fs: FlagSet): Modifiers =
+    Modifiers(mods.flags | fs, mods.privateWithin, mods.annotations)
 
   /**
    * Case classes are immutable objects, so adding equals and hashcode should be safe.  This method will add equals

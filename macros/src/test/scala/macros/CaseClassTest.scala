@@ -10,11 +10,23 @@ class CaseClassTest extends FreeSpecLike with Matchers {
 
   val compiler = Compiler.DefaultCompiler
 
+  "basic compiler check" in {
+    import macros.caseClass
+
+    @caseClass class Foo(foo: String, bar: String)
+    val foo = new Foo("foo", "bar")
+    foo.foo shouldBe "foo"
+    foo.bar shouldBe "bar"
+  }
+
   "stringify case class" in {
     val code = stringify {
-      import macros.CaseClass
+      import macros.caseClass
 
-      @CaseClass class Foo(bar: String)
+      @caseClass class Foo(foo: String, bar: String)
+      val foo = new Foo("foo", "bar")
+      foo.foo
+      foo.bar
     }
 
     println(code)
@@ -22,9 +34,9 @@ class CaseClassTest extends FreeSpecLike with Matchers {
 
   "compile case class" in {
     val code = """
-      import macros.CaseClass
+      import macros.caseClass
 
-      @CaseClass class Foo(bar: String, val foobar: String = "fobar") {
+      @caseClass class Foo(bar: String, val foobar: String = "fobar") {
         val biz: String = "biz"
         def foo: String = "foo"
       }
@@ -35,9 +47,9 @@ class CaseClassTest extends FreeSpecLike with Matchers {
 
   "compile case class no members" in {
     val code = """
-      import macros.CaseClass
+      import macros.caseClass
 
-      @CaseClass class Foo
+      @caseClass class Foo
                """
 
     compiler eval code
@@ -54,6 +66,21 @@ class CaseClassTest extends FreeSpecLike with Matchers {
     }
 
     println(code)
+  }
+
+  "wither case class stringify for debugging" in {
+    compiler.eval(
+      """
+        |import macros.Macros.stringify
+        |stringify {
+        |      import macros.wither
+        |
+        |      @wither case class Foo(foo: String, bar: String)
+        |
+        |      val foo = Foo("foo", "bar")
+        |      foo withFoo "foo 2"
+        |    }
+      """.stripMargin)
   }
 
   "wither case class" in {

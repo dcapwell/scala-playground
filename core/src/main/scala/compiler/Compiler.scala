@@ -1,9 +1,10 @@
 package compiler
 
-import java.net.URLClassLoader
+import java.net.{URL, URLClassLoader}
 
-import scala.tools.nsc.Global
-import scala.tools.reflect.{ToolBoxFactory, ToolBox}
+import scala.tools.reflect.ToolBox
+
+import org.scalamacros.paradise.{Plugin => MacroParadisePlugin}
 
 // Look into https://github.com/twitter/util/blob/master/util-eval/src/main/scala/com/twitter/util/Eval.scala to replace this
 class Compiler(options: List[String] = List(), initialCommands: List[String] = List()) {
@@ -14,34 +15,18 @@ class Compiler(options: List[String] = List(), initialCommands: List[String] = L
   // use the compiler's class loader to get the classes we care about
   val Classpath: List[String] = classOf[Compiler].getClassLoader match {
     case u: URLClassLoader => u.getURLs.toList.map(_.toString)
-    case _ => SysClasspath
+    case _ => SysClasspath // this isn't always going to work.  If JVM doesn't use URLClassLoader and running inside sbt, this will be garbage
   }
+
+  val Plugins: List[String] = List(classOf[MacroParadisePlugin]).map(findPath).map(_.getPath)
 
   val toolBox: ToolBox[_ <: scala.reflect.api.Universe] = {
     val m = scala.reflect.runtime.currentMirror
-    m.mkToolBox(options = (s"-cp ${Classpath.mkString(":")}" :: options) mkString ", ")
+    m.mkToolBox(options = (s"-cp ${Classpath.mkString(":")}" :: options ::: Plugins.map(p => s"-Xplugin:$p")) mkString ", ")
   }
 
-  // inject macro paradise
-  {
-    eval("1 + 2") // needed to force the compiler to be generated
-    val clazz = Class.forName("scala.tools.reflect.ToolBoxFactory$ToolBoxImpl")
-    import scala.collection.convert.WrapAsScala._
-
-    val withCompilerRef = clazz.getMethod("withCompilerApi")
-    val withCompilerApi = withCompilerRef.invoke(toolBox)
-
-    val moduleField = withCompilerApi.getClass.getDeclaredField("api$module")
-    moduleField.setAccessible(true)
-    val module = moduleField.get(withCompilerApi)
-
-    val compilerRef = module.getClass.getDeclaredField("compiler")
-    compilerRef.setAccessible(true)
-    val global = compilerRef.get(module).asInstanceOf[Global]
-
-    import org.scalamacros.paradise.{Plugin => MacroParadisePlugin}
-    new MacroParadisePlugin(global)
-  }
+  private def findPath(clazz: Class[_]): URL =
+    clazz.getProtectionDomain.getCodeSource.getLocation
 
   def parse(code: String) =
     toolBox.parse(s"${initialCommands.mkString("\n")}\n$code")

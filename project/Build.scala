@@ -34,6 +34,8 @@ object build extends Build {
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
       libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
 
+      libraryDependencies += "org.scalamacros" %% "paradise" % paradiseVersion cross CrossVersion.full,
+
       libraryDependencies += "com.chuusai" %% "shapeless" % "2.0.0",
       libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6",
       libraryDependencies += "org.spire-math" %% "spire" % "0.7.5",

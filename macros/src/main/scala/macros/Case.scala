@@ -4,24 +4,24 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
 trait CaseFunctions {
-  def caseFields[A](): List[String] = macro CaseClassMacros.caseFieldsMacro[A]
+  def caseFields[A](): List[String] = macro CaseMacros.caseFieldsMacro[A]
 
-  def extractCaseName[A]: String = macro CaseClassMacros.nameMacro[A]
+  def extractCaseName[A]: String = macro CaseMacros.nameMacro[A]
 
-  def toMap[A](a: A): Map[String, Any] = macro CaseClassMacros.toMapMacro[A]
+  def toMap[A](a: A): Map[String, Any] = macro CaseMacros.toMapMacro[A]
 
-  def fromMap[A](m: Map[String, Any]): A = macro CaseClassMacros.fromMapMacro[A]
+  def fromMap[A](m: Map[String, Any]): A = macro CaseMacros.fromMapMacro[A]
 
-  def toTuple[A](a: A): Any = macro CaseClassMacros.toTupleMacro[A]
+  def toTuple[A](a: A): Any = macro CaseMacros.toTupleMacro[A]
 
-  def fromTuple[CaseClass](p: Product): CaseClass = macro CaseClassMacros.fromTupleMacro[CaseClass]
+  def fromTuple[CaseClass](p: Product): CaseClass = macro CaseMacros.fromTupleMacro[CaseClass]
 
-  def matchType[A]: Unit = macro CaseClassMacros.matchType[A]
+  def matchType[A]: Unit = macro CaseMacros.matchType[A]
 }
 
 object Case extends CaseFunctions
 
-class CaseClassMacros(val c: whitebox.Context) extends CaseClassMacroBox {
+class CaseMacros(val c: whitebox.Context) extends CaseClassMacroBox {
 
   def matchType[A : c.WeakTypeTag]: c.Expr[Unit] = {
     import c.universe._

@@ -2,7 +2,8 @@ package compiler
 
 import java.net.URLClassLoader
 
-import scala.tools.reflect.ToolBox
+import scala.tools.nsc.Global
+import scala.tools.reflect.{ToolBoxFactory, ToolBox}
 
 // Look into https://github.com/twitter/util/blob/master/util-eval/src/main/scala/com/twitter/util/Eval.scala to replace this
 class Compiler(options: List[String] = List(), initialCommands: List[String] = List()) {
@@ -19,6 +20,27 @@ class Compiler(options: List[String] = List(), initialCommands: List[String] = L
   val toolBox: ToolBox[_ <: scala.reflect.api.Universe] = {
     val m = scala.reflect.runtime.currentMirror
     m.mkToolBox(options = (s"-cp ${Classpath.mkString(":")}" :: options) mkString ", ")
+  }
+
+  // inject macro paradise
+  {
+    eval("1 + 2") // needed to force the compiler to be generated
+    val clazz = Class.forName("scala.tools.reflect.ToolBoxFactory$ToolBoxImpl")
+    import scala.collection.convert.WrapAsScala._
+
+    val withCompilerRef = clazz.getMethod("withCompilerApi")
+    val withCompilerApi = withCompilerRef.invoke(toolBox)
+
+    val moduleField = withCompilerApi.getClass.getDeclaredField("api$module")
+    moduleField.setAccessible(true)
+    val module = moduleField.get(withCompilerApi)
+
+    val compilerRef = module.getClass.getDeclaredField("compiler")
+    compilerRef.setAccessible(true)
+    val global = compilerRef.get(module).asInstanceOf[Global]
+
+    import org.scalamacros.paradise.{Plugin => MacroParadisePlugin}
+    new MacroParadisePlugin(global)
   }
 
   def parse(code: String) =

@@ -18,7 +18,6 @@ To play around with macros.macros in the REPL, just add the following at the sta
 ```scala
 import language.experimental.macros
 import scala.reflect.macros.{whitebox, blackbox}
-import scala.annotation.StaticAnnotation
 import scala.reflect.runtime.{universe => ru}
 import ru._
 ```

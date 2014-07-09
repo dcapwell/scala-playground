@@ -1,5 +1,6 @@
 package macros
 
+import scala.reflect.ClassTag
 import scala.reflect.macros.{blackbox, whitebox}
 
 trait TreeLenses {
@@ -107,6 +108,19 @@ trait BlackboxSupport extends TreeLenses {
   def typeTree[A: TypeTag] = TypeTree(typeOf[A])
 
   val UnitLiteral = Literal(Constant(()))
+
+  implicit class TreeOps(self: Tree) {
+    def findAll[T: ClassTag] : List[T] = self collect { case t: T => t }
+  }
+
+  implicit class ListTreeOps(self: List[Tree]) {
+    def trees[T: ClassTag] : List[T] = self collect { case t: T => t }
+
+    def mapPartial(pf: Tree =>? Tree): List[Tree] =
+      self.map(pf orElse {
+        case t => t
+      })
+  }
 }
 
 trait WhiteboxSupport extends BlackboxSupport{

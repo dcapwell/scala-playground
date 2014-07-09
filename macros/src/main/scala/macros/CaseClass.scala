@@ -28,15 +28,13 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
    */
   private def liftToCase(clazz: ClassDef): ClassDef = {
     val typeName = clazz.name
-    val newBody = clazz.impl.body.map {
+    val newBody = clazz.impl.body.mapPartial {
       case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
         ValDef(Modifiers(PARAMACCESSOR | LOCAL | PRIVATE), TermName(s"${v.name.toString} "), v.tpt, v.rhs)
-      case expr => expr
     }
 
-    val caseDefs = newBody.collect {
-      case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
-        DefDef(Modifiers(STABLE), TermName(v.name.toString.trim), List(), List(), v.tpt, Select(This(typeName), v.name))
+    val caseDefs = newBody.trees[ValDef] withFilter(_.mods.hasFlag(PARAMACCESSOR)) map{ v =>
+      DefDef(Modifiers(STABLE), TermName(v.name.toString.trim), List(), List(), v.tpt, Select(This(typeName), v.name))
     }
 
     clazzBody.set(clazz, newBody ::: caseDefs)
@@ -55,7 +53,7 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
    * }}}
    */
   private def createCopyMethod(clazz: ClassDef): ClassDef = {
-    val params = clazz.impl.body.collect{case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => v}
+    val params = clazz.impl.body.trees[ValDef].filter(_.mods.hasFlag(PARAMACCESSOR))
 
     val paramNames = params.map(_.name)
     val argsWithDefault: List[ValDef] = params.map{p =>

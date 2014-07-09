@@ -29,7 +29,8 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
         }
 
 
-        injectProduct(ClassDef(modifiers, typeName, typeDefs, Template(parents, self, newBody ::: caseDefs)))
+        //TODO should look into a monad to make this cleaner
+        createCopyMethod(injectProduct(ClassDef(modifiers, typeName, typeDefs, Template(parents, self, newBody ::: caseDefs))))
       case _ => abort("Only classes can use @CaseClass")
     }
   }
@@ -97,7 +98,18 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
     <synthetic> def copy$default$2: String = Foo.this.bar;
    * }}}
    */
-  private def createCopyMethod = ???
+  private def createCopyMethod(clazz: ClassDef): ClassDef = {
+    val params = clazz.impl.body.collect{case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => v}
+
+    val paramNames = params.map(_.name)
+    val argsWithDefault: List[ValDef] = params.map{p =>
+      q"""val ${p.name}: ${p.tpt} = ${p.name} """.asInstanceOf[ValDef]
+    }
+
+    val copy = addMod(q""" def copy(..$argsWithDefault): ${clazz.name} = new ${clazz.name}(..$paramNames); """, SYNTHETIC)
+
+    clazzBody.mod(_ :+ copy, clazz)
+  }
 
   /**
    * Scala makes case classes extend Product which defines the arity of the class.  This function will add that into

@@ -13,10 +13,17 @@ class CaseClassTest extends FreeSpecLike with Matchers {
   "basic compiler check" in {
     import macros.caseClass
 
-    @caseClass class Foo(foo: String, bar: String)
-    val foo = new Foo("foo", "bar")
+    @caseClass class Foo(foo: String, bar: String, x: Int)
+    val foo = new Foo("foo", "bar", 0)
     foo.foo shouldBe "foo"
     foo.bar shouldBe "bar"
+
+    foo.productElement(0) shouldBe "foo"
+    foo.productElement(1) shouldBe "bar"
+    foo.productElement(2) shouldBe 0
+    intercept[IndexOutOfBoundsException] {
+      foo.productElement(3)
+    }
   }
 
   "stringify case class" in {

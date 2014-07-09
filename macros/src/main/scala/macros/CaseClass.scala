@@ -23,6 +23,13 @@ class CaseClassMacros(val c: whitebox.Context) {
 
   val valFlags: Lens[ValDef, FlagSet] = valMods andThen modFlags
 
+  val defMods = Lens.lensu[DefDef, Modifiers](
+    set = (d, m) => DefDef(m, d.name, d.tparams, d.vparamss, d.tpt, d.rhs),
+    get = (d) => d.mods
+  )
+
+  val defFlags: Lens[DefDef, FlagSet] = defMods andThen modFlags
+
   val templBody = Lens.lensu[Template, List[Tree]](
     set = (t, b) => Template(t.parents, t.self, b),
     get = (t) => t.body
@@ -148,10 +155,30 @@ class CaseClassMacros(val c: whitebox.Context) {
     val params = clazz.impl.body.collect{case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => v}
 
     val classStr = clazz.name.toString
-    val prefix = q""" def productPrefix: String = $classStr; """
+    val size = params.size
+
+    val prefix = defFlags.mod(mods => mods | SYNTHETIC, q"""def productPrefix: String = $classStr; """.asInstanceOf[DefDef])
+    val arity = defFlags.mod(mods => mods | SYNTHETIC, q"""def productArity: Int = $size; """.asInstanceOf[DefDef])
 
 
-    clazzBody.mod({body => body ::: List(prefix)}, clazz)
+    var i = 0
+    val elementCases = params.map{p =>
+      val cd = CaseDef(pq"$i", q"""Foo.this.${p.name} """)
+      i = i + 1 // zipWithIndex is giving me issues since params is ValDef and I return a Tree....  YAY CanBuildFrom!
+      cd
+    }
+
+    val productElement = defFlags.mod(mods => mods | SYNTHETIC, q""" def productElement(x: Int): Any = x match {
+                                case ..$elementCases
+                                case _ => throw new IndexOutOfBoundsException(x.toString())
+                              } """.asInstanceOf[DefDef])
+
+    val clazzThis = This(clazz.name)
+
+    val paramNames = params.map(_.name)
+    val iter = defFlags.mod(mods => mods | SYNTHETIC, q""" def productIterator: Iterator[Any] = Iterator(..$paramNames) """.asInstanceOf[DefDef])
+
+    clazzBody.mod({body => body ::: List(prefix, arity, productElement, iter)}, clazz)
   }
 
   private def addMod(mods: Modifiers, fs: FlagSet): Modifiers =

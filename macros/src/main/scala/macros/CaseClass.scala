@@ -35,12 +35,21 @@ class CaseClassMacros(val c: whitebox.Context) {
     get = (t) => t.body
   )
 
+  val templParents = Lens.lensu[Template, List[Tree]](
+    set = (t, p) => Template(p, t.self, t.body),
+    get = (t) => t.parents
+  )
+
   val clazzTempl = Lens.lensu[ClassDef, Template](
     set = (c, t) => ClassDef(c.mods, c.name, c.tparams, t),
     get = (c) => c.impl
   )
   
   val clazzBody: Lens[ClassDef, List[Tree]] = clazzTempl andThen templBody
+
+  val clazzParents: Lens[ClassDef, List[Tree]] = clazzTempl andThen templParents
+
+
 
   /**
    *  Given a normal class {{{class Foo(foo: String, bar: String)}}}, create a case class that looks identical to
@@ -154,35 +163,53 @@ class CaseClassMacros(val c: whitebox.Context) {
   private def injectProduct(clazz: ClassDef): ClassDef = {
     val params = clazz.impl.body.collect{case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => v}
 
-    val classStr = clazz.name.toString
-    val size = params.size
-
-    val prefix = defFlags.mod(mods => mods | SYNTHETIC, q"""def productPrefix: String = $classStr; """.asInstanceOf[DefDef])
-    val arity = defFlags.mod(mods => mods | SYNTHETIC, q"""def productArity: Int = $size; """.asInstanceOf[DefDef])
-
-
-    var i = 0
-    val elementCases = params.map{p =>
-      val cd = CaseDef(pq"$i", q"""Foo.this.${p.name} """)
-      i = i + 1 // zipWithIndex is giving me issues since params is ValDef and I return a Tree....  YAY CanBuildFrom!
-      cd
+    def productPrefix: Tree = {
+      val classStr = clazz.name.toString
+      addMod( q"""override def productPrefix: String = $classStr; """, SYNTHETIC)
     }
 
-    val productElement = defFlags.mod(mods => mods | SYNTHETIC, q""" def productElement(x: Int): Any = x match {
+    def productArity: Tree = {
+      val size = params.size
+      addMod( q"""override def productArity: Int = $size; """, SYNTHETIC)
+    }
+
+    def productElement: Tree = {
+      var i = 0
+      val elementCases = params.map{p =>
+        val cd = CaseDef(pq"$i", q"""Foo.this.${p.name} """)
+        i = i + 1 // zipWithIndex is giving me issues since params is ValDef and I return a Tree....  YAY CanBuildFrom!
+        cd
+      }
+
+      addMod(q"""override def productElement(x: Int): Any = x match {
                                 case ..$elementCases
                                 case _ => throw new IndexOutOfBoundsException(x.toString())
-                              } """.asInstanceOf[DefDef])
+                              } """, SYNTHETIC)
+    }
 
-    val clazzThis = This(clazz.name)
+    def productIterator: Tree = {
+      val paramNames = params.map(_.name)
+      addMod(q"""override def productIterator: Iterator[Any] = Iterator(..$paramNames) """, SYNTHETIC)
+    }
 
-    val paramNames = params.map(_.name)
-    val iter = defFlags.mod(mods => mods | SYNTHETIC, q""" def productIterator: Iterator[Any] = Iterator(..$paramNames) """.asInstanceOf[DefDef])
+    def canEqual: Tree = {
+      addMod(q"""override def canEqual(x: Any): Boolean = x.isInstanceOf[${clazz.name}] """, SYNTHETIC)
+    }
 
-    clazzBody.mod({body => body ::: List(prefix, arity, productElement, iter)}, clazz)
+    def withProductDefs(clazz: ClassDef): ClassDef =
+      clazzBody.mod(_ ::: List(productPrefix, productArity, productElement, productIterator, canEqual), clazz)
+
+    def withParent(clazz: ClassDef, parents: List[Tree]): ClassDef =
+      clazzParents.mod(_ ::: parents, clazz)
+
+    val product = TypeTree(typeOf[Product])
+    val newClazz = withProductDefs(withParent(clazz, List(product)))
+    newClazz
   }
 
-  private def addMod(mods: Modifiers, fs: FlagSet): Modifiers =
-    Modifiers(mods.flags | fs, mods.privateWithin, mods.annotations)
+  private def addMod(tree: Tree, fs: FlagSet) = tree match {
+    case d: DefDef => defFlags.mod(mods => mods | fs, d)
+  }
 
   /**
    * Case classes are immutable objects, so adding equals and hashcode should be safe.  This method will add equals

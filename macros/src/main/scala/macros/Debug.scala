@@ -15,7 +15,7 @@ trait DebugFunctions {
 
 object Debug extends DebugFunctions
 
-class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacroBox {
+class DebugMacros(val c: blackbox.Context) extends BlackboxSupport {
   import c.universe._
 
   def stringify(param: Expr[Any]): c.Expr[String] = {
@@ -75,21 +75,3 @@ class DebugMacros(val c: blackbox.Context) extends ExprMacroBox with LiteralMacr
   }
 }
 
-trait ExprMacroBox { self =>
-  val c: blackbox.Context
-
-  import c.universe._
-
-  def isLiteral[A](a: Expr[A]): Boolean = a.tree match {
-    case Literal(Constant(_)) => true
-    case _ => false
-  }
-}
-
-trait LiteralMacroBox { self =>
-  val c: blackbox.Context
-
-  import c.universe._
-
-  val UnitLiteral = Literal(Constant(()))
-}

@@ -10,6 +10,58 @@ trait BlackboxSupport {
   def abort(msg: String) =
     c.abort(c.enclosingPosition, msg)
 
+  def isLiteral[A](a: Expr[A]): Boolean = a.tree match {
+    case Literal(Constant(_)) => true
+    case _ => false
+  }
+
+  def isCaseClass(t: Type): Boolean = {
+    val sym = t.typeSymbol
+    sym.isClass && sym.asClass.isCaseClass
+  }
+
+  def assertCaseClass(t: Type): Unit =
+    if(!isCaseClass(t)) c.abort(c.enclosingPosition, s"${t.typeSymbol} is not a case class")
+
+  def primaryConstructor(t: Type): MethodSymbol =
+    t.decls.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.getOrElse(c.abort(c.enclosingPosition, "Unable to find primary constructor for product"))
+
+  def companionObject(t: Type): Symbol =
+    t.typeSymbol.companion
+
+  def caseFields(t: Type): List[Symbol] =
+    primaryConstructor(t).paramLists.head
+
+  def is(tpe: Type, typeString: String): Option[String] = {
+    // expected type
+    val typeSymbol = c.mirror.staticClass(typeString).asType
+    val typeSymbolParams = typeSymbol.typeParams
+
+    // given type
+    val givenSymboles = typeSymbols(tpe)
+
+    if(typeSymbolParams.size != givenSymboles.size) Some(s"Arity does not match; given ${toTypeString(tpe.typeSymbol, givenSymboles)}, but expected ${toTypeString(typeSymbol, typeSymbolParams)}")
+    else {
+      val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
+
+
+      if(! (tpe =:= typeCreated)) Some(s"Expected type is $typeCreated but was given $tpe")
+      else None
+    }
+  }
+
+  def toTypeString(clazz: Symbol, args: List[Symbol]): String = {
+    if(args.isEmpty) clazz.toString
+    else s"$clazz[${args.map(_.name).mkString(",")}]"
+  }
+
+  def typeSymbols(tpe: Type): List[Symbol] =
+    tpe.typeArgs.map(_.typeSymbol.asType)
+
+  def typeTree[A: TypeTag] = TypeTree(typeOf[A])
+
+  val UnitLiteral = Literal(Constant(()))
+
   import scalaz.Lens
 
   val modFlags = Lens.lensu[Modifiers, FlagSet](

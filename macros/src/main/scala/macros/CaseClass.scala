@@ -160,7 +160,7 @@ class CaseClassMacros(val c: whitebox.Context) extends WhiteboxSupport {
     def withParent(clazz: ClassDef, parents: List[Tree]): ClassDef =
       clazzParents.mod(_ ::: parents, clazz)
 
-    val product = TypeTree(typeOf[Product])
+    val product = typeTree[Product]
     val newClazz = withProductDefs(withParent(clazz, List(product)))
     newClazz
   }

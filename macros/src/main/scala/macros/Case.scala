@@ -21,11 +21,11 @@ trait CaseFunctions {
 
 object Case extends CaseFunctions
 
-class CaseMacros(val c: whitebox.Context) extends CaseClassMacroBox {
+class CaseMacros(val c: whitebox.Context) extends WhiteboxSupport {
+
+  import c.universe._
 
   def matchType[A : c.WeakTypeTag]: c.Expr[Unit] = {
-    import c.universe._
-
     val tpe = weakTypeOf[A]
 
     is(tpe, "scala.Tuple3") match {
@@ -126,54 +126,4 @@ class CaseMacros(val c: whitebox.Context) extends CaseClassMacroBox {
     }
   }
 
-}
-
-trait CaseClassMacroBox { self =>
-
-  val c: whitebox.Context
-
-  import c.universe._
-
-  def isCaseClass(t: Type): Boolean = {
-    val sym = t.typeSymbol
-    sym.isClass && sym.asClass.isCaseClass
-  }
-
-  def assertCaseClass(t: Type): Unit =
-    if(!isCaseClass(t)) c.abort(c.enclosingPosition, s"${t.typeSymbol} is not a case class")
-
-  def primaryConstructor(t: Type): MethodSymbol =
-    t.decls.collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }.getOrElse(c.abort(c.enclosingPosition, "Unable to find primary constructor for product"))
-
-  def companionObject(t: Type): Symbol =
-    t.typeSymbol.companion
-
-  def caseFields(t: Type): List[Symbol] =
-    primaryConstructor(t).paramLists.head
-
-  def is(tpe: Type, typeString: String): Option[String] = {
-    // expected type
-    val typeSymbol = c.mirror.staticClass(typeString).asType
-    val typeSymbolParams = typeSymbol.typeParams
-
-    // given type
-    val givenSymboles = typeSymbols(tpe)
-
-    if(typeSymbolParams.size != givenSymboles.size) Some(s"Arity does not match; given ${toTypeString(tpe.typeSymbol, givenSymboles)}, but expected ${toTypeString(typeSymbol, typeSymbolParams)}")
-    else {
-      val typeCreated = typeSymbol.toType.substituteSymbols(typeSymbolParams, givenSymboles)
-
-
-      if(! (tpe =:= typeCreated)) Some(s"Expected type is $typeCreated but was given $tpe")
-      else None
-    }
-  }
-
-  def toTypeString(clazz: Symbol, args: List[Symbol]): String = {
-    if(args.isEmpty) clazz.toString
-    else s"$clazz[${args.map(_.name).mkString(",")}]"
-  }
-
-  def typeSymbols(tpe: Type): List[Symbol] =
-    tpe.typeArgs.map(_.typeSymbol.asType)
 }

@@ -8,6 +8,7 @@ import compiler.Compiler
 import org.scalatest.{Matchers, FreeSpecLike}
 
 import scala.tools.reflect.ToolBoxError
+import scala.language.postfixOps
 
 class MacroTests extends FreeSpecLike with Matchers {
   import Macros._
@@ -62,7 +63,6 @@ class MacroTests extends FreeSpecLike with Matchers {
 
   "expr toString" in {
     debug(stringify {
-      "this is just a test"
       println("to see how good")
     })
 

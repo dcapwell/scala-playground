@@ -1,7 +1,8 @@
 package macros
 
-import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
+import scala.language.postfixOps
+import scala.annotation.StaticAnnotation
 import scala.reflect.macros.blackbox
 
 class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
@@ -101,7 +102,8 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
     def productElement: Tree = {
       var i = 0
       val elementCases = params.map{p =>
-        val cd = CaseDef(pq"$i", q"""Foo.this.${p.name} """)
+        val pat = pq"$i"
+        val cd = cq"""$pat => Foo.this.${p.name}"""
         i = i + 1 // zipWithIndex is giving me issues since params is ValDef and I return a Tree....  YAY CanBuildFrom!
         cd
       }

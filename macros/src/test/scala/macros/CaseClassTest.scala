@@ -32,8 +32,8 @@ class CaseClassTest extends FreeSpecLike with Matchers {
 
       @caseClass class Foo(foo: String, bar: String)
       val foo = new Foo("foo", "bar")
-      foo.foo
-      foo.bar
+      val fooVal = foo.foo
+      val barVal = foo.bar
     }
 
     println(code)

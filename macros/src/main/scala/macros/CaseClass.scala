@@ -16,7 +16,7 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
    */
   //TODO finish
   def caseClass(annottees: c.Expr[Any]*): Tree = {
-    annottees map(_.tree) head match {
+    annottees.head.tree match {
       case cd: ClassDef => createCopyMethod(injectProduct(liftToCase(cd))) //TODO any monad that makes this cleaner?
       case _ => abort("Only classes can use @CaseClass")
     }
@@ -34,10 +34,10 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
     }
 
     val caseDefs = newBody.trees[ValDef] withFilter(_.mods.hasFlag(PARAMACCESSOR)) map{ v =>
-      DefDef(Modifiers(STABLE), TermName(v.name.toString.trim), List(), List(), v.tpt, Select(This(typeName), v.name))
+      DefDef(Modifiers(STABLE | CASEACCESSOR), TermName(v.name.toString.trim), List(), List(), v.tpt, Select(This(typeName), v.name))
     }
 
-    clazzBody.set(clazz, newBody ::: caseDefs)
+    clazzFlags.mod(_ | CASE, clazzBody.set(clazz, newBody ::: caseDefs))
   }
 
   /**

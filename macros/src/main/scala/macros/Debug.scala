@@ -34,7 +34,7 @@ class DebugMacros(val c: blackbox.Context) extends BlackboxSupport {
 
   def debug(params: Expr[Any]*): Expr[Unit] = {
     val trees = params.map { param =>
-      if(isLiteral(param)) q"print($param)"
+      if(isLiteral(param.tree)) q"print($param)"
       else {
         val paramRep = show(param.tree)
         val paramRepTree = Literal(Constant(paramRep))
@@ -58,7 +58,7 @@ class DebugMacros(val c: blackbox.Context) extends BlackboxSupport {
     val start = q""" val $builder = new java.lang.StringBuilder() """
 
     val trees = params.map { param =>
-      if(isLiteral(param)) q""" $builder.append($param) """
+      if(isLiteral(param.tree)) q""" $builder.append($param) """
       else {
         val paramRep = show(param.tree)
         val paramRepTree = Literal(Constant(paramRep))

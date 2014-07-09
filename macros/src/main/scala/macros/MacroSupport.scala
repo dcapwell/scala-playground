@@ -3,9 +3,8 @@ package macros
 import scala.reflect.ClassTag
 import scala.reflect.macros.{blackbox, whitebox}
 
-trait TreeLenses {
-  val c: blackbox.Context
 
+trait TreeLenses { self: BlackboxSupport =>
   import c.universe._
 
   import scalaz.Lens
@@ -44,23 +43,54 @@ trait TreeLenses {
     get = (c) => c.impl
   )
 
+  val clazzName = Lens.lensu[ClassDef, TypeName](
+    set = (c, n) => ClassDef(c.mods, n, c.tparams, c.impl),
+    get = (c) => c.name
+  )
+
+  val clazzMods = Lens.lensu[ClassDef, Modifiers](
+    set = (c, m) => ClassDef(m, c.name, c.tparams, c.impl),
+    get = (c) => c.mods
+  )
+
+  val clazzFlags = clazzMods andThen modFlags
+
   val clazzBody: Lens[ClassDef, List[Tree]] = clazzTempl andThen templBody
 
   val clazzParents: Lens[ClassDef, List[Tree]] = clazzTempl andThen templParents
 }
 
-trait BlackboxSupport extends TreeLenses {
-  val c: blackbox.Context
-
+trait TreeSupport extends TreeLenses { self: BlackboxSupport =>
   import c.universe._
 
-  def abort(msg: String) =
-    c.abort(c.enclosingPosition, msg)
-
-  def isLiteral[A](a: Expr[A]): Boolean = a.tree match {
+  def isLiteral(tree: Tree): Boolean = tree match {
     case Literal(Constant(_)) => true
     case _ => false
   }
+
+  def typeTree[A: TypeTag] = TypeTree(typeOf[A])
+
+  val UnitLiteral = Literal(Constant(()))
+
+  val MapSelf: Tree =>? Tree = {
+    case t => t
+  }
+
+  implicit class TreeOps(self: Tree) {
+    def findAll[T: ClassTag] : List[T] = self collect { case t: T => t }
+  }
+
+  implicit class ListTreeOps(self: List[Tree]) {
+    def trees[T: ClassTag] : List[T] = self collect { case t: T => t }
+
+    def mapPartial(pf: Tree =>? Tree): List[Tree] =
+      self.map(pf orElse MapSelf)
+  }
+
+}
+
+trait TypeSupport { self: BlackboxSupport =>
+  import c.universe._
 
   def isCaseClass(t: Type): Boolean = {
     val sym = t.typeSymbol
@@ -97,32 +127,28 @@ trait BlackboxSupport extends TreeLenses {
     }
   }
 
+  def typeSymbols(tpe: Type): List[Symbol] =
+    tpe.typeArgs.map(_.typeSymbol.asType)
+}
+
+trait SymbolSupport { self: BlackboxSupport =>
+  import c.universe._
+
   def toTypeString(clazz: Symbol, args: List[Symbol]): String = {
     if(args.isEmpty) clazz.toString
     else s"$clazz[${args.map(_.name).mkString(",")}]"
   }
-
-  def typeSymbols(tpe: Type): List[Symbol] =
-    tpe.typeArgs.map(_.typeSymbol.asType)
-
-  def typeTree[A: TypeTag] = TypeTree(typeOf[A])
-
-  val UnitLiteral = Literal(Constant(()))
-
-  implicit class TreeOps(self: Tree) {
-    def findAll[T: ClassTag] : List[T] = self collect { case t: T => t }
-  }
-
-  implicit class ListTreeOps(self: List[Tree]) {
-    def trees[T: ClassTag] : List[T] = self collect { case t: T => t }
-
-    def mapPartial(pf: Tree =>? Tree): List[Tree] =
-      self.map(pf orElse {
-        case t => t
-      })
-  }
 }
 
-trait WhiteboxSupport extends BlackboxSupport{
+trait ContextSupport { self: BlackboxSupport =>
+  def abort(msg: String) =
+    c.abort(c.enclosingPosition, msg)
+}
+
+trait BlackboxSupport extends TreeSupport with TypeSupport with SymbolSupport with ContextSupport {
+  val c: blackbox.Context
+}
+
+trait WhiteboxSupport extends BlackboxSupport {
   val c: whitebox.Context
 }

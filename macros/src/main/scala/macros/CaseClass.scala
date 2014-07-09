@@ -16,75 +16,30 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
   //TODO finish
   def caseClass(annottees: c.Expr[Any]*): Tree = {
     annottees map(_.tree) head match {
-      case ClassDef(modifiers, typeName, typeDefs, Template(parents, self, body)) =>
-        val newBody = body.map {
-          case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
-            liftToCase(v)
-          case expr => expr
-        }
-
-        val caseDefs = newBody.collect {
-          case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
-            createCaseAccessor(typeName, v)
-        }
-
-
-        //TODO should look into a monad to make this cleaner
-        createCopyMethod(injectProduct(ClassDef(modifiers, typeName, typeDefs, Template(parents, self, newBody ::: caseDefs))))
+      case cd: ClassDef => createCopyMethod(injectProduct(liftToCase(cd))) //TODO any monad that makes this cleaner?
       case _ => abort("Only classes can use @CaseClass")
     }
   }
 
   /**
-   * Creates the following
-   *
-   * {{{
-   <synthetic> object Foo extends scala.runtime.AbstractFunction2[String,String,Foo] with Serializable {
-    def <init>(): Foo.type = {
-      Foo.super.<init>();
-      ()
-    };
-    final override <synthetic> def toString(): String = "Foo";
-    case <synthetic> def apply(foo: String, bar: String): Foo = new Foo(foo, bar);
-    case <synthetic> def unapply(x$0: Foo): Option[(String, String)] = if (x$0.==(null))
-      scala.this.None
-    else
-      Some.apply[(String, String)](scala.Tuple2.apply[String, String](x$0.foo, x$0.bar));
-    <synthetic> private def readResolve(): Object = Foo
-  }
-   * }}}
-   */
-  private def createCompanionObject = ???
-
-  /**
    * Converts the class into a case class.  This will case the class modifier to be added to the class
    * and all paramaccessors to also be case classes, marked private, and new def functions created to replace them
    */
-  private def liftToCase(body: ClassDef) = ???
+  private def liftToCase(clazz: ClassDef): ClassDef = {
+    val typeName = clazz.name
+    val newBody = clazz.impl.body.map {
+      case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
+        ValDef(Modifiers(PARAMACCESSOR | LOCAL | PRIVATE), TermName(s"${v.name.toString} "), v.tpt, v.rhs)
+      case expr => expr
+    }
 
-  /**
-   * Converts a paramaccessor valdef and converts it into a caseaccessor valdef and defdef that delegates to it.
-   *
-   * Generates the following
-   *
-   * input (may be private or public)
-   * {{{
-    <paramaccessor> private[this] val foo: String = _;
-   * }}}
-   *
-   * output
-   * {{{
-    <caseaccessor> <paramaccessor> private[this] val foo: String = _;
-    <stable> <caseaccessor> <accessor> <paramaccessor> def foo: String = Foo.this.foo;
-   * }}}
-   *
-   * NOTE.  This function doesn't check that the ValDef given is a paramaccessor, it assumes that was done already
-   */
-  private def liftToCase(param: ValDef): ValDef =
-    ValDef(Modifiers(PARAMACCESSOR | LOCAL | PRIVATE), TermName(s"${param.name.toString} "), param.tpt, param.rhs)
+    val caseDefs = newBody.collect {
+      case v @ ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) =>
+        DefDef(Modifiers(STABLE), TermName(v.name.toString.trim), List(), List(), v.tpt, Select(This(typeName), v.name))
+    }
 
-  private def createCaseAccessor(className: TypeName, param: ValDef): DefDef =
-    DefDef(Modifiers(STABLE), TermName(param.name.toString.trim), List(), List(), param.tpt, Select(This(className), param.name))
+    clazzBody.set(clazz, newBody ::: caseDefs)
+  }
 
   /**
    * Creates a copy method for the case class.  This will follow how scala generates case class copy, which is a function
@@ -201,6 +156,27 @@ class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
    * }}}
    */
   private def createEquality = ???
+
+  /**
+   * Creates the following
+   *
+   * {{{
+   <synthetic> object Foo extends scala.runtime.AbstractFunction2[String,String,Foo] with Serializable {
+    def <init>(): Foo.type = {
+      Foo.super.<init>();
+      ()
+    };
+    final override <synthetic> def toString(): String = "Foo";
+    case <synthetic> def apply(foo: String, bar: String): Foo = new Foo(foo, bar);
+    case <synthetic> def unapply(x$0: Foo): Option[(String, String)] = if (x$0.==(null))
+      scala.this.None
+    else
+      Some.apply[(String, String)](scala.Tuple2.apply[String, String](x$0.foo, x$0.bar));
+    <synthetic> private def readResolve(): Object = Foo
+  }
+   * }}}
+   */
+  private def createCompanionObject = ???
 
   def wither(annottees: c.Expr[Any]*): Tree = {
     annottees.head.tree match {

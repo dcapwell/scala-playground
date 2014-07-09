@@ -2,9 +2,9 @@ package macros
 
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
-import scala.reflect.macros.whitebox
+import scala.reflect.macros.blackbox
 
-class CaseClassMacros(val c: whitebox.Context) extends WhiteboxSupport {
+class CaseClassMacros(val c: blackbox.Context) extends BlackboxSupport {
 
   import c.universe._
   import c.universe.Flag._
